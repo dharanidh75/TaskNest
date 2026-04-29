@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Route, Routes, Link, useNavigate } from "react-router-dom";
 import Profile from "./profile";
 import ProjectFolder from "./project_folder";
@@ -66,7 +66,6 @@ function Home() {
     }
   };
 
-  
   const filtered = folders.filter((f) =>
     f.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -128,18 +127,59 @@ function Home() {
         </div>
 
         <div className="chatbot">
-          <HomeChatbot />
+          <HomeChatbot folders={folders} setFolders={setFolders} />
         </div>
       </div>
     </div>
   );
 }
 
-function HomeChatbot() {
+function HomeChatbot({ folders, setFolders }) {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState([
-    { role: "bot", text: "👋 Hi! Open a project folder to chat with its resources. I'm your TaskNest assistant." }
+    {
+      role: "bot",
+      text: "👋 Hi! I'm your TaskNest assistant. You can ask me to:\n• Create or delete folders\n• List your folders\n• Answer general questions\n\nOpen a specific project folder to chat with its resources.",
+    },
   ]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef();
+
+  // Scroll chat to bottom when messages update
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const sendMessage = async () => {
+    const text = query.trim();
+    if (!text || chatLoading) return;
+
+    setMessages((prev) => [...prev, { role: "user", text }]);
+    setQuery("");
+    setChatLoading(true);
+
+    try {
+      const res = await api.globalChat(text);
+      setMessages((prev) => [
+        ...prev,
+        { role: "bot", text: res.answer, intent: res.intent },
+      ]);
+
+      // If the agent created or deleted a folder, refresh the folder list
+      if (res.intent === "folder_agent") {
+        api.getFolders()
+          .then(setFolders)
+          .catch(() => {});
+      }
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "bot", text: "⚠️ Error: " + err.message },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   return (
     <div className="chatbot-inner">
@@ -152,16 +192,29 @@ function HomeChatbot() {
             {m.text}
           </div>
         ))}
+        {chatLoading && (
+          <div className="chat-bubble bot">
+            <span>Thinking...</span>
+          </div>
+        )}
+        <div ref={chatEndRef} />
       </div>
       <div className="chat_input_container">
         <input
           type="text"
           className="query_box"
-          placeholder="Open a folder to start chatting..."
+          placeholder="Ask me to create a folder, list folders, or anything else..."
           value={query}
-          disabled
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
-        <button className="send_btn" disabled>Send</button>
+        <button
+          className="send_btn"
+          onClick={sendMessage}
+          disabled={chatLoading}
+        >
+          {chatLoading ? "..." : "Send"}
+        </button>
       </div>
     </div>
   );

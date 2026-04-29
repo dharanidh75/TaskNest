@@ -45,6 +45,7 @@
 /* ── Resources ────────────────────────────────────────────────────────────── */
 .resources-section {
   flex: 1;
+  border: solid;
   background: #f2f2f2;
   border-radius: 0 15px 15px 15px;
   padding: 20px;
@@ -138,6 +139,7 @@
   flex: 1;
   background: #f2f2f2;
   border-radius: 0 15px 15px 15px;
+  border: solid;
   padding: 20px;
   min-height: 500px;
   display: flex;
@@ -145,6 +147,7 @@
 }
 
 .notes-sidebar {
+  
   width: 200px;
   flex-shrink: 0;
   display: flex;
@@ -237,6 +240,7 @@
 .todo-section {
   flex: 1;
   background: #f2f2f2;
+  border: solid;
   border-radius: 0 15px 15px 15px;
   padding: 20px;
   min-height: 500px;
@@ -350,7 +354,7 @@
 }
 
 .bubble-text {
-  padding: 10px 14px;
+  padding: 1px 10px;
   border-radius: 12px;
   font-size: 14px;
   line-height: 1.5;
@@ -398,6 +402,8 @@
 .query_box {
   flex: 1;
   height: 42px;
+  position: relative;
+  top: 50px;
   border-radius: 12px 0 0 12px;
   border: 1px solid #ccc;
   padding: 0 14px;
@@ -408,6 +414,8 @@
 .send_btn {
   width: 64px;
   height: 42px;
+  position: relative;
+  top: 50px;
   border-radius: 0 12px 12px 0;
   border: 1px solid #ccc;
   border-left: none;

@@ -63,6 +63,10 @@ export const api = {
     return res.json();
   },
 
+  // Profile
+  getProfile: () => request("GET", "/auth/me"),
+  updateProfile: (data) => request("PUT", "/auth/me", data),
+
   // Folders
   getFolders: () => request("GET", "/folders/"),
   createFolder: (name, description) => request("POST", "/folders/", { name, description }),
@@ -97,7 +101,11 @@ export const api = {
   deleteTask: (folderId, taskId) =>
     request("DELETE", `/folders/${folderId}/tasks/${taskId}`),
 
-  // Chat
+  // Chat — folder-level RAG chat
   chat: (folderId, message) =>
     request("POST", `/folders/${folderId}/chat/`, { message }),
+
+  // Global chat — home page agentic chatbot (no folder context)
+  globalChat: (message) =>
+    request("POST", "/chat/global/", { message }),
 };

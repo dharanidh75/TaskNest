@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from database import get_db, User
-from auth import hash_password, verify_password, create_access_token
+from auth import hash_password, verify_password, create_access_token, get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -52,3 +52,46 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
         "username": user.username,
         "user_id": user.id,
     }
+
+
+class ProfileResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    bio: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class ProfileUpdate(BaseModel):
+    name: str | None = None
+    bio: str | None = None
+
+
+@router.get("/me", response_model=ProfileResponse)
+def get_me(current_user: User = Depends(get_current_user)):
+    return ProfileResponse(
+        id=current_user.id,
+        name=current_user.username,
+        email=current_user.email,
+        bio=getattr(current_user, "bio", None),
+    )
+
+
+@router.put("/me", response_model=ProfileResponse)
+def update_me(
+    body: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if body.name is not None:
+        current_user.username = body.name
+    db.commit()
+    db.refresh(current_user)
+    return ProfileResponse(
+        id=current_user.id,
+        name=current_user.username,
+        email=current_user.email,
+        bio=getattr(current_user, "bio", None),
+    )

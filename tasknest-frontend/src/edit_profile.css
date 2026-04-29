@@ -1,0 +1,64 @@
+.edit-container {
+  flex: 1;
+  background-color: #c8d8e4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.edit-card {
+  background-color: #52ab98;
+  height: 400px;
+  width: 570px;
+  padding: 60px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edit-card h2 {
+  text-align: center;
+  color: black;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group label {
+  color: black;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+}
+
+textarea {
+  resize: none;
+  height: 80px;
+}
+
+.save-btn {
+  padding: 10px;
+  background-color: white;
+  color: #2b6777;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 45px;
+}
+
+.save-btn:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}

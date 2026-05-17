@@ -1,0 +1,8 @@
+README.md
+main.py
+pyproject.toml
+tasknest.egg-info/PKG-INFO
+tasknest.egg-info/SOURCES.txt
+tasknest.egg-info/dependency_links.txt
+tasknest.egg-info/requires.txt
+tasknest.egg-info/top_level.txt

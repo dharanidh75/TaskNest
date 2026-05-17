@@ -13,16 +13,18 @@ the graph detects intent using the LLM and routes to the correct agent:
 import os
 import re
 from typing import TypedDict, Optional
+from functools import lru_cache
 
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from langchain_groq import ChatGroq
-from langchain.schema import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage   # ← fixed import
 
 from rag.chroma_store import query_documents
 
 load_dotenv()
 
+# ── LLM (instantiated once at import time — Groq client is lightweight) ───────
 llm = ChatGroq(
     groq_api_key=os.getenv("GROQ_API_KEY"),
     model_name="llama-3.1-8b-instant",
@@ -48,7 +50,7 @@ class AgentState(TypedDict):
 def classify_intent(state: AgentState) -> AgentState:
     msg = state["user_message"].lower()
 
-    # Fast-path for unambiguous keywords
+    # Fast-path for unambiguous keywords — no LLM call needed
     folder_kw   = ["create folder", "new folder", "delete folder", "list folders",
                    "make folder", "make a folder", "create a folder", "add folder"]
     task_kw     = ["add task", "create task", "new task", "mark task", "complete task",
@@ -111,26 +113,24 @@ def folder_agent(state: AgentState) -> AgentState:
             names = "\n".join(f"📁 {f.name}" for f in folders)
             state["final_answer"] = f"**Your folders:**\n{names}"
         else:
-            state["final_answer"] = "You don\'t have any folders yet."
+            state["final_answer"] = "You don't have any folders yet."
         return state
 
-    # Guard: only proceed if there is clear creation intent
     create_kw = ["create", "make", "new", "add"]
     if not any(w in msg.lower() for w in create_kw):
-        state["final_answer"] = "I can help you manage folders! Try: \'create folder <name>\' or \'list folders\'."
+        state["final_answer"] = "I can help you manage folders! Try: 'create folder <name>' or 'list folders'."
         return state
 
-    # Extract folder name with LLM
     extract_prompt = (
         "Extract ONLY the project folder name from this message.\n"
         "Rules:\n"
         "- Return just the name, no quotes, no explanation.\n"
-        "- If the message has a specific name (e.g. \'TaskNest\', \'Finance App\'), return that name.\n"
+        "- If the message has a specific name (e.g. 'TaskNest', 'Finance App'), return that name.\n"
         "- If no name is given, return exactly: New Project\n\n"
         f"Message: {msg}\nFolder name:"
     )
     extracted = llm.invoke([HumanMessage(content=extract_prompt)])
-    name = extracted.content.strip().strip("\"\'").strip() or "New Project"
+    name = extracted.content.strip().strip("\"'").strip() or "New Project"
 
     existing = db.query(Folder).filter(
         Folder.user_id == state["user_id"],
@@ -146,6 +146,7 @@ def folder_agent(state: AgentState) -> AgentState:
     db.refresh(folder)
     state["final_answer"] = f"✅ Folder **{name}** created successfully! You can find it on the home page."
     return state
+
 
 # ── Task Agent ────────────────────────────────────────────────────────────────
 
@@ -181,7 +182,6 @@ def task_agent(state: AgentState) -> AgentState:
             state["final_answer"] = "Couldn't find that task. Try 'list tasks' to see all tasks."
         return state
 
-    # Extract task text with LLM
     extract_prompt = (
         "Extract ONLY the task description from this message.\n"
         "Return just the task text — no quotes, no explanation.\n"
@@ -189,7 +189,7 @@ def task_agent(state: AgentState) -> AgentState:
         f"Message: {msg}\nTask:"
     )
     extracted = llm.invoke([HumanMessage(content=extract_prompt)])
-    text = extracted.content.strip().strip('"\'').strip() or "New Task"
+    text = extracted.content.strip().strip("\"'").strip() or "New Task"
 
     task = Task(text=text, folder_id=folder_id, completed=False)
     db.add(task)
@@ -277,8 +277,9 @@ def rag_agent(state: AgentState) -> AgentState:
     return state
 
 
-# ── Build Graph ───────────────────────────────────────────────────────────────
+# ── Build Graph (compiled once at import, reused for every request) ───────────
 
+@lru_cache(maxsize=1)
 def build_graph():
     graph = StateGraph(AgentState)
 
@@ -309,4 +310,5 @@ def build_graph():
     return graph.compile()
 
 
+# Compiled at import time — startup warmup in main.py triggers this
 agent_graph = build_graph()

@@ -9,12 +9,24 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(DATABASE_URL)
+# ── Engine with connection pooling ────────────────────────────────────────────
+# Without this, every request opens a fresh DB connection (~50-200ms overhead).
+# pool_size=10  → keep 10 connections alive permanently
+# max_overflow=20 → allow 20 extra under burst load
+# pool_pre_ping=True → discard stale connections automatically
+engine = create_engine(
+    DATABASE_URL,
+    pool_size=10,
+    max_overflow=20,
+    pool_pre_ping=True,
+    pool_recycle=1800,   # recycle connections every 30 min (avoids MySQL gone-away)
+)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-# ── Models ──────────────────────────────────────────────────────────────────
+# ── Models ────────────────────────────────────────────────────────────────────
 
 class User(Base):
     __tablename__ = "users"
@@ -72,7 +84,7 @@ class Task(Base):
     folder      = relationship("Folder", back_populates="tasks")
 
 
-# ── Dependency ───────────────────────────────────────────────────────────────
+# ── Dependency ────────────────────────────────────────────────────────────────
 
 def get_db():
     db = SessionLocal()

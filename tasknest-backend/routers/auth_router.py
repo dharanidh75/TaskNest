@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from database import get_db, User
-from auth import hash_password, verify_password, create_access_token, get_current_user
+from auth import hash_password, verify_password, create_access_token, get_current_user, invalidate_user_cache
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -71,6 +71,7 @@ class ProfileUpdate(BaseModel):
 
 @router.get("/me", response_model=ProfileResponse)
 def get_me(current_user: User = Depends(get_current_user)):
+    # No DB hit here — get_current_user now serves from cache
     return ProfileResponse(
         id=current_user.id,
         name=current_user.username,
@@ -89,6 +90,10 @@ def update_me(
         current_user.username = body.name
     db.commit()
     db.refresh(current_user)
+
+    # Bust the cache so next request fetches the updated row
+    invalidate_user_cache(current_user.id)
+
     return ProfileResponse(
         id=current_user.id,
         name=current_user.username,

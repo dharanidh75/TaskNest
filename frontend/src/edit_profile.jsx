@@ -26,7 +26,7 @@ function EditProfile() {
     <div className="app">
       <div className="nav">
         <Link to="/" className="link">
-          <h1 className="title">TaskNest</h1>
+          <h1 className="title">ResHub</h1>
         </Link>
         <Link to="/profile" className="profile_logo">
           <img src={p_logo} alt="Profile" className="profile_logo" />

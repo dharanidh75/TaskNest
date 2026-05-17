@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import create_tables
 from routers import auth_router, folders, resources, notes, tasks, chat, history
 
-app = FastAPI(title="TaskNest API", version="1.0.0")
+app = FastAPI(title="ResHub API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,7 +45,7 @@ async def startup():
     from agents.graph import agent_graph  # noqa: F401 — import triggers compilation
     print("✅ Agent graph compiled")
 
-    print("🚀 TaskNest API fully warmed up — all systems ready")
+    print("🚀 ResHub API fully warmed up — all systems ready")
 
 
 app.include_router(auth_router.router)
@@ -59,4 +59,4 @@ app.include_router(history.router)
 
 @app.get("/")
 def root():
-    return {"message": "TaskNest API running 🚀"}
+    return {"message": "ResHub API running 🚀"}

@@ -271,7 +271,7 @@ function ProjectFolder() {
       {toastEl}
 
       <div className="nav">
-        <Link to="/" className="link"><h1 className="title">TaskNest</h1></Link>
+        <Link to="/" className="link"><h1 className="title">ResHub</h1></Link>
         {folder && <span className="folder-breadcrumb">/ {folder.name}</span>}
         <Link to="/profile" className="profile_logo" style={{ marginLeft: "auto" }}>
           <img src={p_logo} alt="Profile" className="profile_logo" />
@@ -461,10 +461,9 @@ function ProjectFolder() {
 
         {/* ── RIGHT PANEL — Chatbot ─────────────────────────────────────── */}
         <div className="chatbot">
-          <h2 className="chatbot-header">
-            🤖 RAG Assistant
-            {folder && <span className="chatbot-folder-tag">{folder.name}</span>}
-          </h2>
+          <h1 style={{ padding: "20px 20px 10px", textAlign: "center", fontSize: "20px" }}>
+        ResHub Assistant
+      </h1>
           <div className="chat-messages">
             {messages.map((m, i) => (
               <div key={i} className={`chat-bubble ${m.role}`}>

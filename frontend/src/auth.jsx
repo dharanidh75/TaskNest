@@ -35,7 +35,7 @@ function Auth() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1 className="auth-title">TaskNest</h1>
+        <h1 className="auth-title">ResHub</h1>
         <p className="auth-sub">{mode === "login" ? "Welcome back!" : "Create your account"}</p>
 
         {mode === "register" && (

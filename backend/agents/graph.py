@@ -1,5 +1,5 @@
 """
-LangGraph Agent Graph for TaskNest.
+LangGraph Agent Graph for ResHub.
 
 The RAG chatbot is the orchestrator. When a user sends a message,
 the graph detects intent using the LLM and routes to the correct agent:
@@ -73,7 +73,7 @@ def classify_intent(state: AgentState) -> AgentState:
 
     # LLM classification for natural / ambiguous phrasing
     classify_prompt = (
-        "You are a task router for a project management app called TaskNest.\n"
+        "You are a task router for a project management app called ResHub.\n"
         "Classify the user message into EXACTLY ONE intent:\n\n"
         "- folder_agent   : user EXPLICITLY wants to create, delete, rename, or list folders\n"
         "- task_agent     : user EXPLICITLY wants to add, list, or complete to-do tasks\n"
@@ -125,7 +125,7 @@ def folder_agent(state: AgentState) -> AgentState:
         "Extract ONLY the project folder name from this message.\n"
         "Rules:\n"
         "- Return just the name, no quotes, no explanation.\n"
-        "- If the message has a specific name (e.g. 'TaskNest', 'Finance App'), return that name.\n"
+        "- If the message has a specific name (e.g. 'ResHub', 'Finance App'), return that name.\n"
         "- If no name is given, return exactly: New Project\n\n"
         f"Message: {msg}\nFolder name:"
     )
@@ -254,7 +254,7 @@ def rag_agent(state: AgentState) -> AgentState:
     if docs:
         context = "\n\n---\n\n".join(docs)
         system_prompt = (
-            "You are TaskNest's intelligent project assistant. "
+            "You are ResHub's intelligent project assistant. "
             "Answer the user's question using ONLY the context below from their uploaded project resources. "
             "If the context doesn't contain the answer, say so honestly. "
             "Do NOT give generic OS or computer instructions — stay focused on project content.\n\n"
@@ -262,7 +262,7 @@ def rag_agent(state: AgentState) -> AgentState:
         )
     else:
         system_prompt = (
-            "You are TaskNest's intelligent project assistant. "
+            "You are ResHub's intelligent project assistant. "
             "No resources have been uploaded to this project folder yet. "
             "Do NOT give generic computer or OS instructions. "
             "If the user wants to create folders, tasks, or notes — tell them to simply ask you directly, "

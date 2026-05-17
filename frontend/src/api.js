@@ -6,11 +6,11 @@ const PUBLIC_PATHS = ["/auth/register", "/auth/login"];
 // ── Token helpers ─────────────────────────────────────────────────────────────
 
 function getToken() {
-  return localStorage.getItem("tasknest_token");
+  return localStorage.getItem("ResHub_token");
 }
 
 function getTokenExpiry() {
-  return localStorage.getItem("tasknest_token_expiry");
+  return localStorage.getItem("ResHub_token_expiry");
 }
 
 function isTokenExpired() {
@@ -22,20 +22,20 @@ function isTokenExpired() {
 export function saveAuth(token, username, userId) {
   // Store token with a 7-day expiry timestamp
   const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  localStorage.setItem("tasknest_token", token);
-  localStorage.setItem("tasknest_user", username);
-  localStorage.setItem("tasknest_uid", userId);
-  localStorage.setItem("tasknest_token_expiry", String(expiry));
+  localStorage.setItem("ResHub_token", token);
+  localStorage.setItem("ResHub_user", username);
+  localStorage.setItem("ResHub_uid", userId);
+  localStorage.setItem("ResHub_token_expiry", String(expiry));
 }
 
 export function clearAuth() {
-  ["tasknest_token", "tasknest_user", "tasknest_uid", "tasknest_token_expiry"].forEach(
+  ["ResHub_token", "ResHub_user", "ResHub_uid", "ResHub_token_expiry"].forEach(
     (k) => localStorage.removeItem(k)
   );
 }
 
 export function getUsername() {
-  return localStorage.getItem("tasknest_user");
+  return localStorage.getItem("ResHub_user");
 }
 
 // ── Auth check — used by ProtectedRoute and request() ────────────────────────

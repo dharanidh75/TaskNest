@@ -10,7 +10,7 @@ function ProfileSkeleton() {
   return (
     <div className="app">
       <div className="nav">
-        <Link to="/" className="link"><h1 className="title">TaskNest</h1></Link>
+        <Link to="/" className="link"><h1 className="title">ResHub</h1></Link>
       </div>
       <div className="profile-wrapper">
         {/* Header skeleton */}
@@ -86,7 +86,7 @@ function Profile() {
   if (error) {
     return (
       <div className="app">
-        <div className="nav"><Link to="/" className="link"><h1 className="title">TaskNest</h1></Link></div>
+        <div className="nav"><Link to="/" className="link"><h1 className="title">ResHub</h1></Link></div>
         <div className="profile-wrapper">
           <p style={{ textAlign: "center", padding: "40px", color: "red" }}>{error}</p>
         </div>
@@ -97,7 +97,7 @@ function Profile() {
   return (
     <div className="app">
       <div className="nav">
-        <Link to="/" className="link"><h1 className="title">TaskNest</h1></Link>
+        <Link to="/" className="link"><h1 className="title">ResHub</h1></Link>
         <Link to="/" className="profile_logo">
           <img src={p_logo} alt="Profile" className="profile_logo" />
         </Link>

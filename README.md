@@ -105,7 +105,7 @@ It is not a generic chatbot. Every folder has its own isolated knowledge base. A
 
 ```
 ResHub/
-├── tasknest-backend/
+├── ResHub-backend/
 │   ├── main.py                  # FastAPI app entry point
 │   ├── database.py              # SQLAlchemy models & DB engine
 │   ├── auth.py                  # JWT auth utilities
@@ -124,7 +124,7 @@ ResHub/
 │       ├── chroma_store.py      # ChromaDB collection management
 │       └── indexer.py           # Document chunking & indexing
 │
-└── tasknest-frontend/
+└── ResHub-frontend/
     ├── src/
     │   ├── App.jsx              # Routing
     │   ├── auth.jsx             # Login / Register page
@@ -157,7 +157,7 @@ Make sure you have the following installed:
 
 ```bash
 git clone https://github.com/yourusername/reshub.git
-cd reshub/tasknest-backend
+cd reshub/ResHub-backend
 ```
 
 **2. Create and activate a virtual environment**
@@ -180,7 +180,7 @@ pip install -r requirements.txt
 
 **4. Configure environment variables**
 
-Create a `.env` file in `tasknest-backend/`:
+Create a `.env` file in `ResHub-backend/`:
 
 ```env
 DATABASE_URL=mysql+pymysql://username:password@localhost:3306/reshub
@@ -210,7 +210,7 @@ Interactive docs: `http://localhost:8000/docs`
 **1. Navigate to the frontend directory**
 
 ```bash
-cd ../tasknest-frontend
+cd ../ResHub-frontend
 ```
 
 **2. Install dependencies**

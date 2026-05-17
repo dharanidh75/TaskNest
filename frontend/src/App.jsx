@@ -131,7 +131,7 @@ function Home() {
       {toastEl}
 
       <div className="nav">
-        <h1 className="title">TaskNest</h1>
+        <h1 className="title">ResHub</h1>
         <span className="nav-username">👋 {getUsername()}</span>
         <Link to="/profile" className="profile_logo">
           <img src={p_logo} alt="Profile" className="profile_logo" />
@@ -243,7 +243,7 @@ function HomeChatbot({ folders, setFolders, showToast }) {
   const [messages, setMessages] = useState([
     {
       role: "bot",
-      text: "👋 Hi! I'm your TaskNest assistant. You can ask me to:\n• Create or delete folders\n• List your folders\n• Answer general questions\n\nOpen a specific project folder to chat with its resources.",
+      text: "👋 Hi! I'm your ResHub assistant. You can ask me to:\n• Create or delete folders\n• List your folders\n• Answer general questions\n\nOpen a specific project folder to chat with its resources.",
     },
   ]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -289,7 +289,7 @@ function HomeChatbot({ folders, setFolders, showToast }) {
   return (
     <div className="chatbot-inner">
       <h1 style={{ padding: "20px 20px 10px", textAlign: "center", fontSize: "20px" }}>
-        TaskNest Assistant
+        ResHub Assistant
       </h1>
       <div className="chat-messages">
         {messages.map((m, i) => (

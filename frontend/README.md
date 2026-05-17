@@ -1,4 +1,4 @@
-# TaskNest - Project Setup Guide
+# ResHub - Project Setup Guide
 
 ## Architecture
 
@@ -17,7 +17,7 @@ Frontend (React/Vite) → FastAPI Backend → MySQL (Railway) + ChromaDB (local)
 
 ### 1. Install dependencies
 ```bash
-cd tasknest-backend
+cd ResHub-backend
 python -m venv venv
 source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
@@ -31,7 +31,7 @@ cp .env.example .env
 
 | Variable | Value |
 |----------|-------|
-| `DATABASE_URL` | `mysql+pymysql://user:pass@host:port/tasknest` |
+| `DATABASE_URL` | `mysql+pymysql://user:pass@host:port/ResHub` |
 | `SECRET_KEY` | Any long random string |
 | `GROQ_API_KEY` | From https://console.groq.com |
 | `CHROMA_PATH` | `./chroma_data` (local folder) |
@@ -48,7 +48,7 @@ API docs → http://localhost:8000/docs
 ## Frontend Setup
 
 ```bash
-cd tasknest-frontend
+cd ResHub-frontend
 npm install
 npm run dev
 ```
@@ -87,7 +87,7 @@ App → http://localhost:5173
 
 ## Deployment to Railway
 
-1. Push `tasknest-backend/` to GitHub
+1. Push `ResHub-backend/` to GitHub
 2. Create Railway project → Deploy from GitHub
 3. Add environment variables in Railway dashboard
 4. Add a Railway Volume and set `CHROMA_PATH=/data/chroma`

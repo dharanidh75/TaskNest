@@ -1,5 +1,5 @@
 def main():
-    print("Hello from tasknest-complete!")
+    print("Hello from ResHub-complete!")
 
 
 if __name__ == "__main__":

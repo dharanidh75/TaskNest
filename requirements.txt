@@ -26,7 +26,7 @@ backoff==2.2.1
     # via posthog
 bcrypt==4.1.3
     # via
-    #   tasknest (pyproject.toml)
+    #   ResHub (pyproject.toml)
     #   chromadb
     #   passlib
 build==1.5.0
@@ -44,7 +44,7 @@ charset-normalizer==3.4.7
 chroma-hnswlib==0.7.3
     # via chromadb
 chromadb==0.5.3
-    # via tasknest (pyproject.toml)
+    # via ResHub (pyproject.toml)
 click==8.3.3
     # via
     #   rich-toolkit
@@ -74,7 +74,7 @@ email-validator==2.3.0
     # via fastapi
 fastapi==0.111.0
     # via
-    #   tasknest (pyproject.toml)
+    #   ResHub (pyproject.toml)
     #   chromadb
 fastapi-cli==0.0.24
     # via fastapi
@@ -149,10 +149,10 @@ kubernetes==35.0.0
     # via chromadb
 langchain==0.2.6
     # via
-    #   tasknest (pyproject.toml)
+    #   ResHub (pyproject.toml)
     #   langchain-community
 langchain-community==0.2.6
-    # via tasknest (pyproject.toml)
+    # via ResHub (pyproject.toml)
 langchain-core==0.2.43
     # via
     #   langchain
@@ -161,11 +161,11 @@ langchain-core==0.2.43
     #   langchain-text-splitters
     #   langgraph
 langchain-groq==0.1.6
-    # via tasknest (pyproject.toml)
+    # via ResHub (pyproject.toml)
 langchain-text-splitters==0.2.4
     # via langchain
 langgraph==0.1.19
-    # via tasknest (pyproject.toml)
+    # via ResHub (pyproject.toml)
 langsmith==0.1.147
     # via
     #   langchain
@@ -305,7 +305,7 @@ packaging==24.2
     #   opentelemetry-instrumentation
     #   transformers
 passlib==1.7.4
-    # via tasknest (pyproject.toml)
+    # via ResHub (pyproject.toml)
 pillow==12.2.0
     # via sentence-transformers
 posthog==7.14.2
@@ -338,9 +338,9 @@ pydantic-core==2.46.4
 pygments==2.20.0
     # via rich
 pymysql==1.1.1
-    # via tasknest (pyproject.toml)
+    # via ResHub (pyproject.toml)
 pypdf==4.2.0
-    # via tasknest (pyproject.toml)
+    # via ResHub (pyproject.toml)
 pypika==0.51.1
     # via chromadb
 pyproject-hooks==1.2.0
@@ -348,16 +348,16 @@ pyproject-hooks==1.2.0
 python-dateutil==2.9.0.post0
     # via kubernetes
 python-docx==1.1.2
-    # via tasknest (pyproject.toml)
+    # via ResHub (pyproject.toml)
 python-dotenv==1.0.1
     # via
-    #   tasknest (pyproject.toml)
+    #   ResHub (pyproject.toml)
     #   uvicorn
 python-jose==3.3.0
-    # via tasknest (pyproject.toml)
+    # via ResHub (pyproject.toml)
 python-multipart==0.0.9
     # via
-    #   tasknest (pyproject.toml)
+    #   ResHub (pyproject.toml)
     #   fastapi
 pyyaml==6.0.3
     # via
@@ -404,7 +404,7 @@ scipy==1.17.1
     #   scikit-learn
     #   sentence-transformers
 sentence-transformers==3.0.1
-    # via tasknest (pyproject.toml)
+    # via ResHub (pyproject.toml)
 setuptools==81.0.0
     # via torch
 shellingham==1.5.4
@@ -418,7 +418,7 @@ sniffio==1.3.1
     # via groq
 sqlalchemy==2.0.30
     # via
-    #   tasknest (pyproject.toml)
+    #   ResHub (pyproject.toml)
     #   langchain
     #   langchain-community
 starlette==0.37.2
@@ -488,7 +488,7 @@ urllib3==2.7.0
     #   requests
 uvicorn==0.30.1
     # via
-    #   tasknest (pyproject.toml)
+    #   ResHub (pyproject.toml)
     #   chromadb
     #   fastapi
     #   fastapi-cli

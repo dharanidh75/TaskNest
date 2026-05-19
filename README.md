@@ -355,4 +355,4 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ---
 
-> Built by [Dharanidharan J](https://github.com/dharanidh75) · ResHub is a research-first AI workspace designed for developers and students who think in projects.
+> Built by [Dharanidharan J](https://github.com/dharanidh75) and [Kamaleshwaran S N](https://github.com/WhiteDevil-007-git) · ResHub is a research-first AI workspace designed for developers and students who think in projects.

@@ -469,3 +469,250 @@
   height: 70px;
   width: 70px;
 }
+
+/* ── Paste at the END of your project_folder.css ──────────────────────────── */
+
+/* Chatbot topbar */
+.chatbot-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+}
+
+.chatbot-icon-btn {
+  background: #e8f0f4;
+  border: 1px solid #c8d8e4;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2b6777;
+  transition: background 0.15s;
+}
+.chatbot-icon-btn:hover { background: #c8d8e4; }
+
+/* History sidebar */
+.history-sidebar {
+  width: 190px;
+  flex-shrink: 0;
+  border-right: 1px solid #ddd;
+  background: #f8fbfc;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 8px;
+  overflow-y: auto;
+  gap: 4px;
+}
+
+.history-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b8fa3;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 6px 4px;
+}
+
+.history-empty { font-size: 12px; color: #aaa; padding: 4px; }
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  gap: 6px;
+  transition: background 0.15s;
+}
+.history-item:hover { background: #e0ecf1; }
+
+.history-item-text {
+  font-size: 12px;
+  color: #2b6777;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-delete-btn {
+  background: none;
+  border: none;
+  color: #c0392b;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.history-delete-btn:hover { background: #fdecea; }
+
+/* File manager grid */
+.file-manager-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.file-card {
+  border-radius: 12px;
+  padding: 14px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1.5px solid rgba(0,0,0,0.06);
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+.file-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+.file-card.deleting { opacity: 0.4; pointer-events: none; }
+
+.file-card-icon { font-size: 32px; }
+
+.file-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.file-card-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #2b3a42;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.file-card .resource-delete-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.file-card:hover .resource-delete-btn { opacity: 1; }
+
+/* Confirm box (Claude-style) */
+.confirm-box {
+  margin-top: 10px;
+  background: #f0f6f8;
+  border: 1px solid #c8d8e4;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.confirm-question {
+  font-size: 13px;
+  color: #2b6777;
+  margin: 0;
+  font-weight: 500;
+}
+
+.confirm-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.confirm-option-btn {
+  padding: 6px 14px;
+  background: #fff;
+  border: 1.5px solid #2b6777;
+  border-radius: 20px;
+  color: #2b6777;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.confirm-option-btn:hover { background: #2b6777; color: #fff; }
+
+.confirm-cancel {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 12px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+/* Task markdown */
+.task-md p { margin: 0; font-size: 14px; }
+.task-md strong { font-weight: 600; }
+.task-md em { font-style: italic; }
+.task-md code { background: #e8f0f4; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+
+/* Nav username */
+.nav-username { color: #d0e8f0; font-size: 14px; }
+
+/* Modal extras */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-box {
+  background: #fff;
+  border-radius: 16px;
+  width: 380px;
+  max-width: 92vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  overflow: hidden;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 12px; border-bottom: 1px solid #eee; }
+.modal-header h3 { margin: 0; font-size: 16px; color: #2b6777; }
+.modal-close { background: none; border: none; font-size: 16px; cursor: pointer; color: #999; padding: 2px 6px; border-radius: 4px; }
+.modal-close:hover { background: #f5f5f5; }
+.modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
+.modal-body label { font-size: 12px; color: #666; font-weight: 600; margin-top: 8px; }
+.modal-input { width: 100%; height: 38px; border: 1.5px solid #d0e4ea; border-radius: 8px; padding: 0 12px; font-size: 14px; box-sizing: border-box; outline: none; }
+.modal-input:focus { border-color: #2b6777; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 12px 20px 18px; border-top: 1px solid #f0f0f0; }
+.modal-cancel { padding: 8px 18px; border: 1.5px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; color: #555; }
+.modal-cancel:hover { background: #f5f5f5; }
+.modal-confirm { padding: 8px 20px; background: #2b6777; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.modal-confirm:hover:not(:disabled) { background: #1f4f5c; }
+.modal-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.folder_delete_btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #c0392b;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.folder_item_wrapper { position: relative; }
+.folder_item_wrapper:hover .folder_delete_btn { opacity: 1; }
+.folder_item_wrapper.deleting { opacity: 0.4; pointer-events: none; }
+.task-item.toggling { opacity: 0.6; }

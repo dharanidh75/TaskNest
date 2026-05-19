@@ -9,48 +9,55 @@ import folder_b from "./assets/folder_b.png";
 import { api, isLoggedIn, getUsername, clearAuth } from "./api";
 import "./App.css";
 import "./loading.css";
+import { v4 as uuidv4 } from "uuid";
 
-/* ── Toast ──────────────────────────────────────────────────────────────── */
+/* ── Toast ───────────────────────────────────────────────────────────────── */
 function Toast({ message, type = "success", onDone }) {
-  useEffect(() => {
-    const t = setTimeout(onDone, 2600);
-    return () => clearTimeout(t);
-  }, [onDone]);
+  useEffect(() => { const t = setTimeout(onDone, 2600); return () => clearTimeout(t); }, [onDone]);
   return <div className={`toast${type === "error" ? " error" : ""}`}>{message}</div>;
 }
-
 function useToast() {
   const [toast, setToast] = useState(null);
-  const show = useCallback((message, type = "success") => {
-    setToast({ message, type, key: Date.now() });
-  }, []);
-  const el = toast ? (
-    <Toast key={toast.key} message={toast.message} type={toast.type} onDone={() => setToast(null)} />
-  ) : null;
+  const show = useCallback((message, type = "success") => setToast({ message, type, key: Date.now() }), []);
+  const el = toast ? <Toast key={toast.key} message={toast.message} type={toast.type} onDone={() => setToast(null)} /> : null;
   return [el, show];
 }
 
-/* ── Modal ──────────────────────────────────────────────────────────────── */
+/* ── Modal ───────────────────────────────────────────────────────────────── */
 function Modal({ title, onClose, children }) {
   useEffect(() => {
-    const close = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", close);
-    return () => window.removeEventListener("keydown", close);
+    const h = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
   }, [onClose]);
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>{title}</h3>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
+        <div className="modal-header"><h3>{title}</h3><button className="modal-close" onClick={onClose}>✕</button></div>
         {children}
       </div>
     </div>
   );
 }
 
-/* ── App ─────────────────────────────────────────────────────────────────── */
+/* ── ConfirmBox (Claude-style clickable option box) ───────────────────────── */
+export function ConfirmBox({ question, options, onSelect, onCancel }) {
+  return (
+    <div className="confirm-box">
+      <p className="confirm-question">{question}</p>
+      <div className="confirm-options">
+        {options.map((opt) => (
+          <button key={opt.value} className="confirm-option-btn" onClick={() => onSelect(opt)}>
+            {opt.label}
+          </button>
+        ))}
+      </div>
+      {onCancel && <button className="confirm-cancel" onClick={onCancel}>Cancel</button>}
+    </div>
+  );
+}
+
+/* ── App ──────────────────────────────────────────────────────────────────── */
 function App() {
   return (
     <Routes>
@@ -69,7 +76,7 @@ function ProtectedRoute({ children }) {
   return isLoggedIn() ? children : null;
 }
 
-/* ── Home ────────────────────────────────────────────────────────────────── */
+/* ── Home ─────────────────────────────────────────────────────────────────── */
 function Home() {
   const [folders, setFolders]       = useState([]);
   const [search, setSearch]         = useState("");
@@ -80,117 +87,77 @@ function Home() {
   const [creating, setCreating]     = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [toastEl, showToast]        = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
-    api.getFolders()
-      .then(setFolders)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    api.getFolders().then(setFolders).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const handleAddFolder = async () => {
     if (!folderName.trim()) return;
     setCreating(true);
     try {
-      const newFolder = await api.createFolder(folderName.trim(), folderDesc);
-      setFolders((prev) => [newFolder, ...prev]);
-      setShowModal(false);
-      setFolderName("");
-      setFolderDesc("");
+      const f = await api.createFolder(folderName.trim(), folderDesc);
+      setFolders((p) => [f, ...p]);
+      setShowModal(false); setFolderName(""); setFolderDesc("");
       showToast("✅ Folder created!");
-    } catch (e) {
-      showToast("Error: " + e.message, "error");
-    } finally {
-      setCreating(false);
-    }
+    } catch (e) { showToast(e.message, "error"); }
+    finally { setCreating(false); }
   };
 
-  const handleDeleteFolder = async (e, folderId) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDelete = async (e, id) => {
+    e.preventDefault(); e.stopPropagation();
     if (!confirm("Delete this folder and all its data?")) return;
-    setDeletingId(folderId);
+    setDeletingId(id);
     try {
-      await api.deleteFolder(folderId);
-      setFolders((prev) => prev.filter((f) => f.id !== folderId));
-      showToast("🗑️ Folder deleted");
-    } catch (e) {
-      showToast("Error: " + e.message, "error");
-    } finally {
-      setDeletingId(null);
-    }
+      await api.deleteFolder(id);
+      setFolders((p) => p.filter((f) => f.id !== id));
+      showToast("🗑️ Deleted");
+    } catch (e) { showToast(e.message, "error"); }
+    finally { setDeletingId(null); }
   };
 
-  const filtered = folders.filter((f) =>
-    f.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = folders.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="app">
       {toastEl}
-
       <div className="nav">
-        <h1 className="title">ResHub</h1>
+        <h1 className="title">DevNest</h1>
         <span className="nav-username">👋 {getUsername()}</span>
-        <Link to="/profile" className="profile_logo">
-          <img src={p_logo} alt="Profile" className="profile_logo" />
-        </Link>
+        <Link to="/profile"><img src={p_logo} alt="Profile" className="profile_logo" /></Link>
       </div>
-
       <div className="main-content">
         <div className="folders">
           <div className="searchbar">
             <h1 className="folder_header">FOLDERS</h1>
-            <input
-              type="text"
-              placeholder="Search folders..."
-              className="search_bar"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <input type="text" placeholder="Search folders..." className="search_bar" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-
           <div className="folder_rack">
-            {/* Skeleton loading state */}
-            {loading && [1, 2, 3, 4].map((i) => (
-              <div key={i} className="folder_item_wrapper" style={{ top: 100 }}>
+            {loading && [1,2,3,4].map((i) => (
+              <div key={i} className="folder_item_wrapper">
                 <div className="skeleton skeleton-folder" />
                 <div className="skeleton skeleton-text" />
               </div>
             ))}
-
             {!loading && filtered.length === 0 && (
               <p style={{ padding: "10px", color: "#777", marginTop: 100 }}>
-                {search ? "No folders match your search." : "No folders yet. Click NEW to create one!"}
+                {search ? "No folders match." : "No folders yet. Click NEW to create one!"}
               </p>
             )}
-
             {!loading && filtered.map((folder) => (
               <div key={folder.id} className={`folder_item_wrapper${deletingId === folder.id ? " deleting" : ""}`}>
                 <Link to={`/project_folder/${folder.id}`} className="folder_item">
                   <img src={folder_b} alt="folder" className="folder_icon_b" />
                   <p className="folder_name">{folder.name}</p>
                 </Link>
-                <button
-                  className="folder_delete_btn"
-                  onClick={(e) => handleDeleteFolder(e, folder.id)}
-                  title="Delete folder"
-                  disabled={deletingId === folder.id}
-                >
-                  {deletingId === folder.id
-                    ? <span className="btn-spinner btn-spinner--dark" style={{ width: 10, height: 10 }} />
-                    : "✕"}
+                <button className="folder_delete_btn" onClick={(e) => handleDelete(e, folder.id)} disabled={deletingId === folder.id}>
+                  {deletingId === folder.id ? <span className="btn-spinner btn-spinner--dark" style={{ width: 10, height: 10 }} /> : "✕"}
                 </button>
               </div>
             ))}
           </div>
-
           <button onClick={() => setShowModal(true)} className="new_task_box">
-            <div className="new_button">
-              <span style={{ fontWeight: "bold" }}>NEW</span>
-              <span>✏️</span>
-            </div>
+            <div className="new_button"><span style={{ fontWeight: "bold" }}>NEW</span><span>✏️</span></div>
           </button>
         </div>
 
@@ -199,34 +166,18 @@ function Home() {
         </div>
       </div>
 
-      {/* Create Folder Modal */}
       {showModal && (
         <Modal title="Create New Folder" onClose={() => setShowModal(false)}>
           <div className="modal-body">
             <label>Folder Name *</label>
-            <input
-              autoFocus
-              className="modal-input"
-              placeholder="e.g. Finance App"
-              value={folderName}
-              onChange={(e) => setFolderName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddFolder()}
-            />
+            <input autoFocus className="modal-input" placeholder="e.g. Finance App" value={folderName}
+              onChange={(e) => setFolderName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddFolder()} />
             <label>Description (optional)</label>
-            <input
-              className="modal-input"
-              placeholder="Short description..."
-              value={folderDesc}
-              onChange={(e) => setFolderDesc(e.target.value)}
-            />
+            <input className="modal-input" placeholder="Short description..." value={folderDesc} onChange={(e) => setFolderDesc(e.target.value)} />
           </div>
           <div className="modal-footer">
             <button className="modal-cancel" onClick={() => setShowModal(false)}>Cancel</button>
-            <button
-              className="modal-confirm"
-              onClick={handleAddFolder}
-              disabled={creating || !folderName.trim()}
-            >
+            <button className="modal-confirm" onClick={handleAddFolder} disabled={creating || !folderName.trim()}>
               {creating ? <><span className="btn-spinner" />Creating...</> : "Create Folder"}
             </button>
           </div>
@@ -236,84 +187,230 @@ function Home() {
   );
 }
 
-/* ── HomeChatbot ─────────────────────────────────────────────────────────── */
+/* ── HomeChatbot ──────────────────────────────────────────────────────────── */
 function HomeChatbot({ folders, setFolders, showToast }) {
-  const [query, setQuery]     = useState("");
-  const navigate = useNavigate(); 
-  const [messages, setMessages] = useState([
-    {
-      role: "bot",
-      text: "👋 Hi! I'm your ResHub assistant. You can ask me to:\n• Create or delete folders\n• List your folders\n• Answer general questions\n\nOpen a specific project folder to chat with its resources.",
-    },
-  ]);
+  const navigate    = useNavigate();
+  const [query, setQuery]           = useState("");
+  const [messages, setMessages]     = useState([{ role: "bot", text: "👋 Hi! I'm your DevNest assistant. Ask me to open a folder, add tasks, generate documents, or anything else." }]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [sessionId, setSessionId]   = useState(uuidv4());
+  const [showHistory, setShowHistory] = useState(false);
+  const [sessions, setSessions]     = useState([]);
+  const [pendingTask, setPendingTask] = useState(null); // { text, waitingForFolder }
   const chatEndRef = useRef();
 
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  // Ctrl+B toggle history
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const h = (e) => { if (e.ctrlKey && e.key === "b") { e.preventDefault(); toggleHistory(); } };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [showHistory]);
+
+  const toggleHistory = async () => {
+    if (!showHistory) {
+      const data = await api.getGlobalHistory().catch(() => []);
+      setSessions(data);
+    }
+    setShowHistory((p) => !p);
+  };
+
+  const newConversation = () => {
+    setSessionId(uuidv4());
+    setMessages([{ role: "bot", text: "👋 New conversation started! How can I help?" }]);
+    setPendingTask(null);
+  };
+
+  const loadSession = (session) => {
+    setSessionId(session.session_id);
+    setMessages(session.messages.map((m) => ({ role: m.role, text: m.text })));
+    setShowHistory(false);
+  };
+
+  const deleteSession = async (e, sid) => {
+    e.stopPropagation();
+    await api.deleteGlobalSession(sid).catch(() => {});
+    setSessions((p) => p.filter((s) => s.session_id !== sid));
+  };
+
+  // Handle folder selection for pending task
+  const handleFolderSelectForTask = async (opt) => {
+    const folderId = opt.value;
+    const taskText = pendingTask;
+    setPendingTask(null);
+    setMessages((p) => p.filter((m) => !m.isConfirm));
+    setChatLoading(true);
+    try {
+      await api.createTask(folderId, taskText);
+      const botMsg = { role: "bot", text: `✅ Task **${taskText}** added to **${opt.label}**!` };
+      setMessages((p) => [...p, botMsg]);
+      await api.saveGlobalMessage("bot", botMsg.text, "task_agent", sessionId);
+    } catch (err) {
+      setMessages((p) => [...p, { role: "bot", text: "❌ " + err.message }]);
+    } finally { setChatLoading(false); }
+  };
 
   const sendMessage = async () => {
     const text = query.trim();
     if (!text || chatLoading) return;
-    setMessages((prev) => [...prev, { role: "user", text }]);
+
+    const userMsg = { role: "user", text };
+    setMessages((p) => [...p, userMsg]);
     setQuery("");
     setChatLoading(true);
+    await api.saveGlobalMessage("user", text, null, sessionId).catch(() => {});
+
     try {
-      const res = await api.globalChat(text);
-      setMessages((prev) => [...prev, { role: "bot", text: res.answer, intent: res.intent }]);
+      // ── Task intent: detect on frontend before API call ──────────────────
+      const taskKw = ["add task", "create task", "new task", "add todo", "create todo", "add to-do", "add a task"];
+      const msgLower = text.toLowerCase();
+
+      if (taskKw.some((k) => msgLower.includes(k))) {
+        // Extract task name
+        let taskName = text;
+        for (const k of taskKw) {
+          taskName = taskName.replace(new RegExp(k, "i"), "").trim();
+        }
+        taskName = taskName.replace(/^(for|to|a|an|the)\s+/i, "").trim() || text;
+
+        // Show folder selection confirm box
+        setPendingTask(taskName);
+        const confirmMsg = {
+          role: "bot",
+          text: `Which project folder should I add **"${taskName}"** to?`,
+          isConfirm: true,
+          confirmOptions: folders.map((f) => ({ label: f.name, value: f.id })),
+        };
+        setMessages((p) => [...p, confirmMsg]);
+        await api.saveGlobalMessage("bot", confirmMsg.text, "task_agent", sessionId).catch(() => {});
+        setChatLoading(false);
+        return;
+      }
+
+      const res = await api.globalChat(text, sessionId);
+
+      // ── Folder navigation ────────────────────────────────────────────────
+      if (res.intent === "navigate_folder" && res.folder_id) {
+        setMessages((p) => [...p, { role: "bot", text: res.answer }]);
+        await api.saveGlobalMessage("bot", res.answer, "navigate_folder", sessionId).catch(() => {});
+        setTimeout(() => navigate(`/project_folder/${res.folder_id}`), 800);
+        setChatLoading(false);
+        return;
+      }
+
+      // ── Document pending — ask format if not specified ────────────────────
+      if (res.intent === "document_agent" && res.doc_pending) {
+        const fmtMsg = {
+          role: "bot",
+          text: res.answer,
+          isDocConfirm: true,
+          folderId: res.folder_id,
+          fmt: res.fmt,
+        };
+        setMessages((p) => [...p, fmtMsg]);
+        await api.saveGlobalMessage("bot", res.answer, "document_agent", sessionId).catch(() => {});
+        setChatLoading(false);
+        return;
+      }
+
       if (res.intent === "folder_agent") {
         api.getFolders().then(setFolders).catch(() => {});
       }
-      const openKw = ["open", "go to", "navigate to", "switch to", "take me to"];
-      const msgLower = text.toLowerCase();
-      if (openKw.some((k) => msgLower.includes(k))) {
-        const matched = folders.find((f) =>
-          msgLower.includes(f.name.toLowerCase())
-        );
-        if (matched) {
-          setMessages((prev) => [...prev, {
-            role: "bot",
-            text: `📁 Opening **${matched.name}**...`,
-          }]);
-          setTimeout(() => navigate(`/project_folder/${matched.id}`), 800);
-        }
-      }
+
+      const botMsg = { role: "bot", text: res.answer };
+      setMessages((p) => [...p, botMsg]);
+      await api.saveGlobalMessage("bot", res.answer, res.intent, sessionId).catch(() => {});
     } catch (err) {
-      setMessages((prev) => [...prev, { role: "bot", text: "⚠️ Error: " + err.message }]);
-    } finally {
-      setChatLoading(false);
+      setMessages((p) => [...p, { role: "bot", text: "⚠️ " + err.message }]);
+    } finally { setChatLoading(false); }
+  };
+
+  const handleDocDownload = async (folderId, fmt) => {
+    try {
+      setMessages((p) => [...p, { role: "bot", text: `⏳ Generating ${fmt.toUpperCase()}...` }]);
+      const blob = await api.downloadDocument(folderId, fmt);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `document.${fmt}`; a.click();
+      URL.revokeObjectURL(url);
+      setMessages((p) => [...p.slice(0, -1), { role: "bot", text: `✅ ${fmt.toUpperCase()} downloaded!` }]);
+    } catch (err) {
+      setMessages((p) => [...p.slice(0, -1), { role: "bot", text: "❌ " + err.message }]);
     }
   };
 
   return (
-    <div className="chatbot-inner">
-      <h1 style={{ padding: "20px 20px 10px", textAlign: "center", fontSize: "20px" }}>
-        ResHub Assistant
-      </h1>
-      <div className="chat-messages">
-        {messages.map((m, i) => (
-          <div key={i} className={`chat-bubble ${m.role}`}>{m.text}</div>
-        ))}
-        {chatLoading && (
-          <div className="chat-bubble bot">
-            <div className="typing-dots"><span/><span/><span/></div>
+    <div className="chatbot-inner" style={{ position: "relative", display: "flex", flexDirection: "column", height: "100%" }}>
+      {/* Header */}
+      <div className="chatbot-topbar">
+        <span style={{ fontWeight: 500, fontSize: 15 }}>DevNest Assistant</span>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="chatbot-icon-btn" onClick={newConversation} title="New conversation">✦</button>
+          <button className="chatbot-icon-btn" onClick={toggleHistory} title="History (Ctrl+B)">☰</button>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        {/* History sidebar */}
+        {showHistory && (
+          <div className="history-sidebar">
+            <p className="history-label">History</p>
+            {sessions.length === 0 && <p className="history-empty">No conversations yet.</p>}
+            {sessions.map((s) => (
+              <div key={s.session_id} className="history-item" onClick={() => loadSession(s)}>
+                <span className="history-item-text">
+                  {s.messages[0]?.text?.slice(0, 38) || "Conversation"}...
+                </span>
+                <button className="history-delete-btn" onClick={(e) => deleteSession(e, s.session_id)}>✕</button>
+              </div>
+            ))}
           </div>
         )}
-        <div ref={chatEndRef} />
-      </div>
-      <div className="chat_input_container">
-        <input
-          type="text"
-          className="query_box"
-          placeholder="Ask me to create a folder, list folders, or anything else..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-        />
-        <button className="send_btn" onClick={sendMessage} disabled={chatLoading}>
-          {chatLoading ? "..." : "Send"}
-        </button>
+
+        {/* Messages */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div className="chat-messages">
+            {messages.map((m, i) => (
+              <div key={i} className={`chat-bubble ${m.role}`}>
+                <div className="bubble-text">{m.text}</div>
+
+                {/* Folder selection confirm box */}
+                {m.isConfirm && m.confirmOptions && (
+                  <ConfirmBox
+                    question="Select a folder:"
+                    options={m.confirmOptions}
+                    onSelect={handleFolderSelectForTask}
+                    onCancel={() => { setPendingTask(null); setMessages((p) => p.filter((_, j) => j !== i)); }}
+                  />
+                )}
+
+                {/* Document format selection */}
+                {m.isDocConfirm && (
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <button className="confirm-option-btn" onClick={() => handleDocDownload(m.folderId, "pdf")}>📄 PDF</button>
+                    <button className="confirm-option-btn" onClick={() => handleDocDownload(m.folderId, "docx")}>📝 DOCX</button>
+                  </div>
+                )}
+              </div>
+            ))}
+            {chatLoading && (
+              <div className="chat-bubble bot">
+                <div className="bubble-text"><div className="typing-dots"><span/><span/><span/></div></div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          <div className="chat_input_container" style={{ margin: "10px 16px 16px" }}>
+            <input type="text" className="query_box" placeholder="Open a folder, add tasks, generate documents..."
+              value={query} onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()} />
+            <button className="send_btn" onClick={sendMessage} disabled={chatLoading}>
+              {chatLoading ? "..." : "Send"}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

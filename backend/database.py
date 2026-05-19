@@ -9,24 +9,17 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# ── Engine with connection pooling ────────────────────────────────────────────
-# Without this, every request opens a fresh DB connection (~50-200ms overhead).
-# pool_size=10  → keep 10 connections alive permanently
-# max_overflow=20 → allow 20 extra under burst load
-# pool_pre_ping=True → discard stale connections automatically
 engine = create_engine(
     DATABASE_URL,
     pool_size=10,
     max_overflow=20,
     pool_pre_ping=True,
-    pool_recycle=1800,   # recycle connections every 30 min (avoids MySQL gone-away)
+    pool_recycle=1800,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-
-# ── Models ────────────────────────────────────────────────────────────────────
 
 class User(Base):
     __tablename__ = "users"
@@ -49,6 +42,7 @@ class Folder(Base):
     resources   = relationship("Resource", back_populates="folder", cascade="all, delete")
     notes       = relationship("Note", back_populates="folder", cascade="all, delete")
     tasks       = relationship("Task", back_populates="folder", cascade="all, delete")
+    history     = relationship("ChatHistory", back_populates="folder", cascade="all, delete")
 
 
 class Resource(Base):
@@ -84,7 +78,20 @@ class Task(Base):
     folder      = relationship("Folder", back_populates="tasks")
 
 
-# ── Dependency ────────────────────────────────────────────────────────────────
+class ChatHistory(Base):
+    __tablename__ = "chat_history"
+    id            = Column(Integer, primary_key=True, index=True)
+    user_id       = Column(Integer, ForeignKey("users.id"), nullable=False)
+    folder_id     = Column(Integer, ForeignKey("folders.id"), nullable=True)
+    session_id    = Column(String(64), nullable=False, index=True)
+    session_title = Column(String(200), nullable=True)   # first user message as heading
+    role          = Column(String(10), nullable=False)
+    text          = Column(Text, nullable=False)
+    intent        = Column(String(50), nullable=True)
+    sources       = Column(Integer, default=0)
+    created_at    = Column(DateTime, default=datetime.utcnow)
+    folder        = relationship("Folder", back_populates="history")
+
 
 def get_db():
     db = SessionLocal()

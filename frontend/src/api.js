@@ -1,72 +1,41 @@
 const BASE = "http://localhost:8000";
 
-// ── Public routes — never need a token ───────────────────────────────────────
 const PUBLIC_PATHS = ["/auth/register", "/auth/login"];
 
-// ── Token helpers ─────────────────────────────────────────────────────────────
-
-function getToken() {
-  return localStorage.getItem("ResHub_token");
-}
-
-function getTokenExpiry() {
-  return localStorage.getItem("ResHub_token_expiry");
-}
-
+function getToken() { return localStorage.getItem("tasknest_token"); }
+function getTokenExpiry() { return localStorage.getItem("tasknest_token_expiry"); }
 function isTokenExpired() {
   const expiry = getTokenExpiry();
-  if (!expiry) return true;
-  return Date.now() > parseInt(expiry, 10);
+  return !expiry || Date.now() > parseInt(expiry, 10);
 }
 
 export function saveAuth(token, username, userId) {
-  // Store token with a 7-day expiry timestamp
   const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  localStorage.setItem("ResHub_token", token);
-  localStorage.setItem("ResHub_user", username);
-  localStorage.setItem("ResHub_uid", userId);
-  localStorage.setItem("ResHub_token_expiry", String(expiry));
+  localStorage.setItem("tasknest_token", token);
+  localStorage.setItem("tasknest_user", username);
+  localStorage.setItem("tasknest_uid", userId);
+  localStorage.setItem("tasknest_token_expiry", String(expiry));
 }
 
 export function clearAuth() {
-  ["ResHub_token", "ResHub_user", "ResHub_uid", "ResHub_token_expiry"].forEach(
-    (k) => localStorage.removeItem(k)
-  );
+  ["tasknest_token", "tasknest_user", "tasknest_uid", "tasknest_token_expiry"]
+    .forEach((k) => localStorage.removeItem(k));
 }
 
-export function getUsername() {
-  return localStorage.getItem("ResHub_user");
-}
-
-// ── Auth check — used by ProtectedRoute and request() ────────────────────────
+export function getUsername() { return localStorage.getItem("tasknest_user"); }
 
 export function isLoggedIn() {
   const token = getToken();
   if (!token) return false;
-  if (isTokenExpired()) {
-    clearAuth();
-    return false;
-  }
+  if (isTokenExpired()) { clearAuth(); return false; }
   return true;
 }
 
-// ── Redirect helper ───────────────────────────────────────────────────────────
-
-function redirectToAuth() {
-  clearAuth();
-  window.location.replace("/auth");
-}
-
-// ── Core request function ─────────────────────────────────────────────────────
+function redirectToAuth() { clearAuth(); window.location.replace("/auth"); }
 
 async function request(method, path, body = null, isFormData = false) {
   const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p));
-
-  // Block any protected request if the user is not authenticated
-  if (!isPublic && !isLoggedIn()) {
-    redirectToAuth();
-    throw new Error("Not authenticated");
-  }
+  if (!isPublic && !isLoggedIn()) { redirectToAuth(); throw new Error("Not authenticated"); }
 
   const headers = {};
   const token = getToken();
@@ -79,27 +48,28 @@ async function request(method, path, body = null, isFormData = false) {
     body: isFormData ? body : body ? JSON.stringify(body) : undefined,
   });
 
-  // 401 from backend → token rejected (tampered/revoked) → force logout
-  if (res.status === 401) {
-    redirectToAuth();
-    throw new Error("Session expired. Please log in again.");
-  }
-
+  if (res.status === 401) { redirectToAuth(); throw new Error("Session expired."); }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || "Request failed");
   }
-
   return res.json();
 }
 
-// ── API surface ───────────────────────────────────────────────────────────────
+// Raw fetch for blob (file download)
+async function requestBlob(path) {
+  const token = getToken();
+  const res = await fetch(BASE + path, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Download failed");
+  return res.blob();
+}
 
 export const api = {
-  // Auth (public)
+  // Auth
   register: (username, email, password) =>
     request("POST", "/auth/register", { username, email, password }),
-
   login: async (email, password) => {
     const form = new URLSearchParams();
     form.append("username", email);
@@ -109,10 +79,7 @@ export const api = {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: form,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || "Login failed");
-    }
+    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.detail || "Login failed"); }
     return res.json();
   },
 
@@ -136,6 +103,9 @@ export const api = {
   deleteResource: (folderId, resourceId) =>
     request("DELETE", `/folders/${folderId}/resources/${resourceId}`),
 
+  // View resource in browser or download
+  getResourceUrl: (folderId, resourceId) => `${BASE}/folders/${folderId}/resources/${resourceId}/serve/`,
+
   // Notes
   getNotes:   (folderId)                        => request("GET", `/folders/${folderId}/notes/`),
   createNote: (folderId, title, content)        => request("POST", `/folders/${folderId}/notes/`, { title, content }),
@@ -143,20 +113,37 @@ export const api = {
   deleteNote: (folderId, noteId)                => request("DELETE", `/folders/${folderId}/notes/${noteId}`),
 
   // Tasks
-  getTasks:   (folderId)               => request("GET", `/folders/${folderId}/tasks/`),
-  createTask: (folderId, text, deadline)=> request("POST", `/folders/${folderId}/tasks/`, { text, deadline }),
-  updateTask: (folderId, taskId, data) => request("PUT", `/folders/${folderId}/tasks/${taskId}`, data),
-  deleteTask: (folderId, taskId)       => request("DELETE", `/folders/${folderId}/tasks/${taskId}`),
+  getTasks:    (folderId)                => request("GET", `/folders/${folderId}/tasks/`),
+  createTask:  (folderId, text, deadline)=> request("POST", `/folders/${folderId}/tasks/`, { text, deadline }),
+  updateTask:  (folderId, taskId, data)  => request("PUT", `/folders/${folderId}/tasks/${taskId}`, data),
+  deleteTask:  (folderId, taskId)        => request("DELETE", `/folders/${folderId}/tasks/${taskId}`),
 
   // Chat
-  chat:       (folderId, message) => request("POST", `/folders/${folderId}/chat/`, { message }),
-  globalChat: (message)           => request("POST", "/chat/global/", { message }),
+  chat:       (folderId, message, sessionId) =>
+    request("POST", `/folders/${folderId}/chat/`, { message, session_id: sessionId }),
+  globalChat: (message, sessionId) =>
+    request("POST", "/chat/global/", { message, session_id: sessionId }),
 
-  // Chat History
-  getChatHistory:  (folderId)                                    => request("GET", `/folders/${folderId}/history/`),
-  saveChatMessage: (folderId, role, text, intent = null, sources = 0) =>
-    request("POST", `/folders/${folderId}/history/`, { role, text, intent, sources }),
+  // History — folder
+  getFolderHistory:   (folderId)                                   => request("GET", `/folders/${folderId}/history/`),
+  saveFolderMessage:  (folderId, role, text, intent, sources, sid) =>
+    request("POST", `/folders/${folderId}/history/`, { role, text, intent, sources, session_id: sid }),
+  deleteFolderSession:(folderId, sessionId)                        =>
+    request("DELETE", `/folders/${folderId}/history/${sessionId}`),
 
-  // Folder Stats
+  // History — global
+  getGlobalHistory:    ()                                          => request("GET", "/history/global/"),
+  saveGlobalMessage:   (role, text, intent, sid)                   =>
+    request("POST", "/history/global/", { role, text, intent, session_id: sid }),
+  deleteGlobalSession: (sessionId)                                 =>
+    request("DELETE", `/history/global/${sessionId}`),
+
+  // Document generation — triggers download
+  downloadDocument: async (folderId, fmt = "docx") => {
+    const blob = await requestBlob(`/folders/${folderId}/generate-document/?fmt=${fmt}`);
+    return blob;
+  },
+
+  // Folder stats
   getFolderStats: (folderId) => request("GET", `/folders/${folderId}/stats/`),
 };

@@ -156,8 +156,8 @@ Make sure you have the following installed:
 **1. Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/reshub.git
-cd reshub/ResHub-backend
+git clone https://github.com/dharanidh75/RESHUB.git
+cd reshub/backend
 ```
 
 **2. Create and activate a virtual environment**
@@ -210,7 +210,7 @@ Interactive docs: `http://localhost:8000/docs`
 **1. Navigate to the frontend directory**
 
 ```bash
-cd ../ResHub-frontend
+cd ../reshub/frontend
 ```
 
 **2. Install dependencies**

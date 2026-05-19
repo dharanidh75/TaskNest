@@ -246,16 +246,21 @@ input {
   outline: none;
 }
 
-.send_btn {
-  width: 70px;
-  height: 42px;
-  border-radius: 0 12px 12px 0;
-  border: 1px solid #ccc;
-  border-left: none;
-  cursor: pointer;
+.send_btnf {
+  height: 32px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 8px;
   background: #2b6777;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, opacity 0.15s;
 }
 
 .send_btn:hover {

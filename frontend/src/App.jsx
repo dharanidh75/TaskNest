@@ -33,14 +33,17 @@ function Modal({ title, onClose, children }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header"><h3>{title}</h3><button className="modal-close" onClick={onClose}>✕</button></div>
+        <div className="modal-header">
+          <h3>{title}</h3>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
         {children}
       </div>
     </div>
   );
 }
 
-/* ── ConfirmBox (Claude-style clickable option box) ───────────────────────── */
+/* ── ConfirmBox ───────────────────────────────────────────────────────────── */
 export function ConfirmBox({ question, options, onSelect, onCancel }) {
   return (
     <div className="confirm-box">
@@ -130,10 +133,16 @@ function Home() {
         <div className="folders">
           <div className="searchbar">
             <h1 className="folder_header">FOLDERS</h1>
-            <input type="text" placeholder="Search folders..." className="search_bar" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Search folders..."
+              className="search_bar"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
           <div className="folder_rack">
-            {loading && [1,2,3,4].map((i) => (
+            {loading && [1, 2, 3, 4].map((i) => (
               <div key={i} className="folder_item_wrapper">
                 <div className="skeleton skeleton-folder" />
                 <div className="skeleton skeleton-text" />
@@ -145,19 +154,31 @@ function Home() {
               </p>
             )}
             {!loading && filtered.map((folder) => (
-              <div key={folder.id} className={`folder_item_wrapper${deletingId === folder.id ? " deleting" : ""}`}>
+              <div
+                key={folder.id}
+                className={`folder_item_wrapper${deletingId === folder.id ? " deleting" : ""}`}
+              >
                 <Link to={`/project_folder/${folder.id}`} className="folder_item">
                   <img src={folder_b} alt="folder" className="folder_icon_b" />
                   <p className="folder_name">{folder.name}</p>
                 </Link>
-                <button className="folder_delete_btn" onClick={(e) => handleDelete(e, folder.id)} disabled={deletingId === folder.id}>
-                  {deletingId === folder.id ? <span className="btn-spinner btn-spinner--dark" style={{ width: 10, height: 10 }} /> : "✕"}
+                <button
+                  className="folder_delete_btn"
+                  onClick={(e) => handleDelete(e, folder.id)}
+                  disabled={deletingId === folder.id}
+                >
+                  {deletingId === folder.id
+                    ? <span className="btn-spinner btn-spinner--dark" style={{ width: 10, height: 10 }} />
+                    : "✕"}
                 </button>
               </div>
             ))}
           </div>
           <button onClick={() => setShowModal(true)} className="new_task_box">
-            <div className="new_button"><span style={{ fontWeight: "bold" }}>NEW</span><span>✏️</span></div>
+            <div className="new_button">
+              <span style={{ fontWeight: "bold" }}>NEW</span>
+              <span>✏️</span>
+            </div>
           </button>
         </div>
 
@@ -170,14 +191,29 @@ function Home() {
         <Modal title="Create New Folder" onClose={() => setShowModal(false)}>
           <div className="modal-body">
             <label>Folder Name *</label>
-            <input autoFocus className="modal-input" placeholder="e.g. Finance App" value={folderName}
-              onChange={(e) => setFolderName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddFolder()} />
+            <input
+              autoFocus
+              className="modal-input"
+              placeholder="e.g. Finance App"
+              value={folderName}
+              onChange={(e) => setFolderName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddFolder()}
+            />
             <label>Description (optional)</label>
-            <input className="modal-input" placeholder="Short description..." value={folderDesc} onChange={(e) => setFolderDesc(e.target.value)} />
+            <input
+              className="modal-input"
+              placeholder="Short description..."
+              value={folderDesc}
+              onChange={(e) => setFolderDesc(e.target.value)}
+            />
           </div>
           <div className="modal-footer">
             <button className="modal-cancel" onClick={() => setShowModal(false)}>Cancel</button>
-            <button className="modal-confirm" onClick={handleAddFolder} disabled={creating || !folderName.trim()}>
+            <button
+              className="modal-confirm"
+              onClick={handleAddFolder}
+              disabled={creating || !folderName.trim()}
+            >
               {creating ? <><span className="btn-spinner" />Creating...</> : "Create Folder"}
             </button>
           </div>
@@ -189,17 +225,22 @@ function Home() {
 
 /* ── HomeChatbot ──────────────────────────────────────────────────────────── */
 function HomeChatbot({ folders, setFolders, showToast }) {
-  const navigate    = useNavigate();
-  const [query, setQuery]           = useState("");
-  const [messages, setMessages]     = useState([{ role: "bot", text: "👋 Hi! I'm your ResHub assistant. Ask me to open a folder, add tasks, generate documents, or anything else." }]);
-  const [chatLoading, setChatLoading] = useState(false);
-  const [sessionId, setSessionId]   = useState(uuidv4());
-  const [showHistory, setShowHistory] = useState(false);
-  const [sessions, setSessions]     = useState([]);
-  const [pendingTask, setPendingTask] = useState(null); // { text, waitingForFolder }
-  const chatEndRef = useRef();
+  const navigate = useNavigate();
 
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  const [query, setQuery]             = useState("");
+  const [messages, setMessages]       = useState([{ role: "bot", text: "👋 Hi! I'm your ResHub assistant. Ask me to open a folder, add tasks, generate documents, or anything else." }]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [sessionId, setSessionId]     = useState(uuidv4());
+  const [showHistory, setShowHistory] = useState(false);
+  const [sessions, setSessions]       = useState([]);
+  const [pendingTask, setPendingTask] = useState(null);
+
+  const chatEndRef  = useRef();
+  const textareaRef = useRef(null);   // ← for the Claude-style input
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   // Ctrl+B toggle history
   useEffect(() => {
@@ -234,7 +275,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
     setSessions((p) => p.filter((s) => s.session_id !== sid));
   };
 
-  // Handle folder selection for pending task
   const handleFolderSelectForTask = async (opt) => {
     const folderId = opt.value;
     const taskText = pendingTask;
@@ -255,6 +295,11 @@ function HomeChatbot({ folders, setFolders, showToast }) {
     const text = query.trim();
     if (!text || chatLoading) return;
 
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+
     const userMsg = { role: "user", text };
     setMessages((p) => [...p, userMsg]);
     setQuery("");
@@ -262,19 +307,17 @@ function HomeChatbot({ folders, setFolders, showToast }) {
     await api.saveGlobalMessage("user", text, null, sessionId).catch(() => {});
 
     try {
-      // ── Task intent: detect on frontend before API call ──────────────────
+      // ── Task intent ──────────────────────────────────────────────────────
       const taskKw = ["add task", "create task", "new task", "add todo", "create todo", "add to-do", "add a task"];
       const msgLower = text.toLowerCase();
 
       if (taskKw.some((k) => msgLower.includes(k))) {
-        // Extract task name
         let taskName = text;
         for (const k of taskKw) {
           taskName = taskName.replace(new RegExp(k, "i"), "").trim();
         }
         taskName = taskName.replace(/^(for|to|a|an|the)\s+/i, "").trim() || text;
 
-        // Show folder selection confirm box
         setPendingTask(taskName);
         const confirmMsg = {
           role: "bot",
@@ -299,7 +342,7 @@ function HomeChatbot({ folders, setFolders, showToast }) {
         return;
       }
 
-      // ── Document pending — ask format if not specified ────────────────────
+      // ── Document pending ─────────────────────────────────────────────────
       if (res.intent === "document_agent" && res.doc_pending) {
         const fmtMsg = {
           role: "bot",
@@ -342,21 +385,23 @@ function HomeChatbot({ folders, setFolders, showToast }) {
 
   return (
     <div className="chatbot-inner" style={{ position: "relative", display: "flex", flexDirection: "column", height: "100%" }}>
+
       {/* Header */}
       <div className="chatbot-topbar">
-          <button className="chatbot-icon-btn" onClick={toggleHistory} title="History (Ctrl+B)">☰</button>
+        <button className="chatbot-icon-btn" onClick={toggleHistory} title="History (Ctrl+B)">☰</button>
         <div style={{ display: "flex", gap: 8 }}>
-        <span style={{ fontWeight: 500, fontSize: 19 }}>ResHub Assistant</span>
+          <span style={{ fontWeight: 500, fontSize: 19 }}>ResHub Assistant</span>
         </div>
       </div>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+
         {/* History sidebar */}
         {showHistory && (
           <div className="history-sidebar">
             <div className="history-newchat">
               <p className="history-label">History</p>
-            <button className="chatbot-icon-btn" onClick={newConversation} title="New conversation">✦</button>
+              <button className="chatbot-icon-btn" onClick={newConversation} title="New conversation">✦</button>
             </div>
             {sessions.length === 0 && <p className="history-empty">No conversations yet.</p>}
             {sessions.map((s) => (
@@ -364,30 +409,34 @@ function HomeChatbot({ folders, setFolders, showToast }) {
                 <span className="history-item-text">
                   {s.messages[0]?.text?.slice(0, 38) || "Conversation"}...
                 </span>
-                <button className="history-delete-btn" onClick={(e) => deleteSession(e, s.session_id)}>✕</button>
+                <button
+                  className="history-delete-btn"
+                  onClick={(e) => deleteSession(e, s.session_id)}
+                >✕</button>
               </div>
             ))}
           </div>
         )}
 
-        {/* Messages */}
+        {/* Messages + Input */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <div className="chat-messages">
             {messages.map((m, i) => (
               <div key={i} className={`chat-bubble ${m.role}`}>
                 <div className="bubble-text">{m.text}</div>
 
-                {/* Folder selection confirm box */}
                 {m.isConfirm && m.confirmOptions && (
                   <ConfirmBox
                     question="Select a folder:"
                     options={m.confirmOptions}
                     onSelect={handleFolderSelectForTask}
-                    onCancel={() => { setPendingTask(null); setMessages((p) => p.filter((_, j) => j !== i)); }}
+                    onCancel={() => {
+                      setPendingTask(null);
+                      setMessages((p) => p.filter((_, j) => j !== i));
+                    }}
                   />
                 )}
 
-                {/* Document format selection */}
                 {m.isDocConfirm && (
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                     <button className="confirm-option-btn" onClick={() => handleDocDownload(m.folderId, "pdf")}>📄 PDF</button>
@@ -398,20 +447,54 @@ function HomeChatbot({ folders, setFolders, showToast }) {
             ))}
             {chatLoading && (
               <div className="chat-bubble bot">
-                <div className="bubble-text"><div className="typing-dots"><span/><span/><span/></div></div>
+                <div className="bubble-text">
+                  <div className="typing-dots"><span /><span /><span /></div>
+                </div>
               </div>
             )}
             <div ref={chatEndRef} />
           </div>
 
-          <div className="chat_input_container" style={{ margin: "10px 16px 16px" }}>
-            <input type="text" className="query_box" placeholder="Open a folder, add tasks, generate documents..."
-              value={query} onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()} />
-            <button className="send_btn" onClick={sendMessage} disabled={chatLoading}>
-              {chatLoading ? "..." : "Send"}
-            </button>
+          {/* ── Claude-style input ─────────────────────────────────────────── */}
+          <div className="chat_input_wrapper">
+            <textarea
+              ref={textareaRef}
+              className="query_box"
+              placeholder="Open a folder, add tasks, generate documents..."
+              value={query}
+              rows={1}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+            />
+            <div className="chat_toolbar">
+              <div /> {/* empty left side — no upload needed here */}
+              <button
+                className="send_btnf"
+                onClick={sendMessage}
+                disabled={chatLoading || !query.trim()}
+              >
+                {chatLoading ? "..." : ""}
+                {!chatLoading && (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2.5"
+                    strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="19" x2="12" y2="5" />
+                    <polyline points="5 12 12 5 19 12" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
+
         </div>
       </div>
     </div>

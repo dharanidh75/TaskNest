@@ -147,7 +147,6 @@
 }
 
 .notes-sidebar {
-  
   width: 200px;
   flex-shrink: 0;
   display: flex;
@@ -393,36 +392,86 @@
   font-size: 13px;
 }
 
-.chat_input_container {
-  display: flex;
+/* ── Chat Input (Claude-style) ────────────────────────────────────────────── */
+.chat_input_wrapper {
+  background: #f5f7f9;
+  border: 2px solid #c8d4da;
+  border-radius: 12px;
+  padding: 12px 14px 10px 14px;
   margin: 10px 16px 16px;
-  gap: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s;
+}
+
+.chat_input_wrapper:focus-within {
+  border-color: #2b6777;
 }
 
 .query_box {
-  flex: 1;
-  height: 42px;
-  position: relative;
-  top: 50px;
-  border-radius: 12px 0 0 12px;
-  border: 1px solid #ccc;
-  padding: 0 14px;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent;
   font-size: 14px;
-  outline: none;
+  font-family: inherit;
+  color: #1a2e35;
+  resize: none;
+  line-height: 1.55;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  caret-color: #2b6777;
 }
 
-.send_btn {
-  width: 64px;
-  height: 42px;
-  position: relative;
-  top: 50px;
-  border-radius: 0 12px 12px 0;
-  border: 1px solid #ccc;
-  border-left: none;
+.query_box::placeholder {
+  color: #9aacb3;
+}
+
+.chat_toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.plus_btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #6a8a95;
+  font-size: 27px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: color 0.15s;
+  padding-bottom: 1px;
+}
+
+.plus_btn:hover {
+  color: #2b6777;
+}
+
+.send_btnf {
+  height: 32px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 8px;
   background: #2b6777;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, opacity 0.15s;
 }
 
 .send_btn:hover:not(:disabled) {
@@ -430,7 +479,7 @@
 }
 
 .send_btn:disabled {
-  background: #ccc;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -470,9 +519,7 @@
   width: 70px;
 }
 
-/* ── Paste at the END of your project_folder.css ──────────────────────────── */
-
-/* Chatbot topbar */
+/* ── Chatbot topbar ───────────────────────────────────────────────────────── */
 .chatbot-topbar {
   display: flex;
   align-items: center;
@@ -496,9 +543,12 @@
   color: #2b6777;
   transition: background 0.15s;
 }
-.chatbot-icon-btn:hover { background: #c8d8e4; }
 
-/* History sidebar */
+.chatbot-icon-btn:hover {
+  background: #c8d8e4;
+}
+
+/* ── History sidebar ──────────────────────────────────────────────────────── */
 .history-sidebar {
   width: 190px;
   flex-shrink: 0;
@@ -520,7 +570,11 @@
   margin: 0 0 6px 4px;
 }
 
-.history-empty { font-size: 12px; color: #aaa; padding: 4px; }
+.history-empty {
+  font-size: 12px;
+  color: #aaa;
+  padding: 4px;
+}
 
 .history-item {
   display: flex;
@@ -532,7 +586,10 @@
   gap: 6px;
   transition: background 0.15s;
 }
-.history-item:hover { background: #e0ecf1; }
+
+.history-item:hover {
+  background: #e0ecf1;
+}
 
 .history-item-text {
   font-size: 12px;
@@ -553,9 +610,12 @@
   border-radius: 4px;
   flex-shrink: 0;
 }
-.history-delete-btn:hover { background: #fdecea; }
 
-/* File manager grid */
+.history-delete-btn:hover {
+  background: #fdecea;
+}
+
+/* ── File manager grid ────────────────────────────────────────────────────── */
 .file-manager-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -574,10 +634,20 @@
   transition: transform 0.15s, box-shadow 0.15s;
   position: relative;
 }
-.file-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
-.file-card.deleting { opacity: 0.4; pointer-events: none; }
 
-.file-card-icon { font-size: 32px; }
+.file-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+
+.file-card.deleting {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.file-card-icon {
+  font-size: 32px;
+}
 
 .file-card-info {
   display: flex;
@@ -600,9 +670,12 @@
   opacity: 0;
   transition: opacity 0.15s;
 }
-.file-card:hover .resource-delete-btn { opacity: 1; }
 
-/* Confirm box (Claude-style) */
+.file-card:hover .resource-delete-btn {
+  opacity: 1;
+}
+
+/* ── Confirm box ──────────────────────────────────────────────────────────── */
 .confirm-box {
   margin-top: 10px;
   background: #f0f6f8;
@@ -637,7 +710,11 @@
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
-.confirm-option-btn:hover { background: #2b6777; color: #fff; }
+
+.confirm-option-btn:hover {
+  background: #2b6777;
+  color: #fff;
+}
 
 .confirm-cancel {
   background: none;
@@ -648,16 +725,24 @@
   align-self: flex-start;
 }
 
-/* Task markdown */
+/* ── Task markdown ────────────────────────────────────────────────────────── */
 .task-md p { margin: 0; font-size: 14px; }
 .task-md strong { font-weight: 600; }
 .task-md em { font-style: italic; }
-.task-md code { background: #e8f0f4; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.task-md code {
+  background: #e8f0f4;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
 
-/* Nav username */
-.nav-username { color: #d0e8f0; font-size: 14px; }
+/* ── Nav username ─────────────────────────────────────────────────────────── */
+.nav-username {
+  color: #d0e8f0;
+  font-size: 14px;
+}
 
-/* Modal extras */
+/* ── Modal ────────────────────────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -667,6 +752,7 @@
   justify-content: center;
   z-index: 1000;
 }
+
 .modal-box {
   background: #fff;
   border-radius: 16px;
@@ -679,21 +765,109 @@
   left: 50%;
   transform: translate(-50%, -50%);
 }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 12px; border-bottom: 1px solid #eee; }
-.modal-header h3 { margin: 0; font-size: 16px; color: #2b6777; }
-.modal-close { background: none; border: none; font-size: 16px; cursor: pointer; color: #999; padding: 2px 6px; border-radius: 4px; }
-.modal-close:hover { background: #f5f5f5; }
-.modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
-.modal-body label { font-size: 12px; color: #666; font-weight: 600; margin-top: 8px; }
-.modal-input { width: 100%; height: 38px; border: 1.5px solid #d0e4ea; border-radius: 8px; padding: 0 12px; font-size: 14px; box-sizing: border-box; outline: none; }
-.modal-input:focus { border-color: #2b6777; }
-.modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 12px 20px 18px; border-top: 1px solid #f0f0f0; }
-.modal-cancel { padding: 8px 18px; border: 1.5px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; color: #555; }
-.modal-cancel:hover { background: #f5f5f5; }
-.modal-confirm { padding: 8px 20px; background: #2b6777; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px; }
-.modal-confirm:hover:not(:disabled) { background: #1f4f5c; }
-.modal-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
 
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #2b6777;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #999;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.modal-close:hover {
+  background: #f5f5f5;
+}
+
+.modal-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-body label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.modal-input {
+  width: 100%;
+  height: 38px;
+  border: 1.5px solid #d0e4ea;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.modal-input:focus {
+  border-color: #2b6777;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 12px 20px 18px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.modal-cancel {
+  padding: 8px 18px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  color: #555;
+}
+
+.modal-cancel:hover {
+  background: #f5f5f5;
+}
+
+.modal-confirm {
+  padding: 8px 20px;
+  background: #2b6777;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-confirm:hover:not(:disabled) {
+  background: #1f4f5c;
+}
+
+.modal-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Folder item ──────────────────────────────────────────────────────────── */
 .folder_delete_btn {
   position: absolute;
   top: -6px;
@@ -712,7 +886,25 @@
   opacity: 0;
   transition: opacity 0.15s;
 }
-.folder_item_wrapper { position: relative; }
-.folder_item_wrapper:hover .folder_delete_btn { opacity: 1; }
-.folder_item_wrapper.deleting { opacity: 0.4; pointer-events: none; }
-.task-item.toggling { opacity: 0.6; }
+
+.folder_item_wrapper {
+  position: relative;
+}
+
+.folder_item_wrapper:hover .folder_delete_btn {
+  opacity: 1;
+}
+
+.folder_item_wrapper.deleting {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.task-item.toggling {
+  opacity: 0.6;
+}
+
+.history-newchat {
+  display: flex;
+  gap: 100px;
+}

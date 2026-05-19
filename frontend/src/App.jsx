@@ -122,7 +122,7 @@ function Home() {
     <div className="app">
       {toastEl}
       <div className="nav">
-        <h1 className="title">DevNest</h1>
+        <h1 className="title">ResHub</h1>
         <span className="nav-username">👋 {getUsername()}</span>
         <Link to="/profile"><img src={p_logo} alt="Profile" className="profile_logo" /></Link>
       </div>
@@ -191,7 +191,7 @@ function Home() {
 function HomeChatbot({ folders, setFolders, showToast }) {
   const navigate    = useNavigate();
   const [query, setQuery]           = useState("");
-  const [messages, setMessages]     = useState([{ role: "bot", text: "👋 Hi! I'm your DevNest assistant. Ask me to open a folder, add tasks, generate documents, or anything else." }]);
+  const [messages, setMessages]     = useState([{ role: "bot", text: "👋 Hi! I'm your ResHub assistant. Ask me to open a folder, add tasks, generate documents, or anything else." }]);
   const [chatLoading, setChatLoading] = useState(false);
   const [sessionId, setSessionId]   = useState(uuidv4());
   const [showHistory, setShowHistory] = useState(false);
@@ -344,10 +344,9 @@ function HomeChatbot({ folders, setFolders, showToast }) {
     <div className="chatbot-inner" style={{ position: "relative", display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
       <div className="chatbot-topbar">
-        <span style={{ fontWeight: 500, fontSize: 15 }}>DevNest Assistant</span>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className="chatbot-icon-btn" onClick={newConversation} title="New conversation">✦</button>
           <button className="chatbot-icon-btn" onClick={toggleHistory} title="History (Ctrl+B)">☰</button>
+        <div style={{ display: "flex", gap: 8 }}>
+        <span style={{ fontWeight: 500, fontSize: 19 }}>ResHub Assistant</span>
         </div>
       </div>
 
@@ -355,7 +354,10 @@ function HomeChatbot({ folders, setFolders, showToast }) {
         {/* History sidebar */}
         {showHistory && (
           <div className="history-sidebar">
-            <p className="history-label">History</p>
+            <div className="history-newchat">
+              <p className="history-label">History</p>
+            <button className="chatbot-icon-btn" onClick={newConversation} title="New conversation">✦</button>
+            </div>
             {sessions.length === 0 && <p className="history-empty">No conversations yet.</p>}
             {sessions.map((s) => (
               <div key={s.session_id} className="history-item" onClick={() => loadSession(s)}>

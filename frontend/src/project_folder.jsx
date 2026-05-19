@@ -13,6 +13,7 @@ function Toast({ message, type = "success", onDone }) {
   useEffect(() => { const t = setTimeout(onDone, 2600); return () => clearTimeout(t); }, [onDone]);
   return <div className={`toast${type === "error" ? " error" : ""}`}>{message}</div>;
 }
+
 function useToast() {
   const [toast, setToast] = useState(null);
   const show = useCallback((m, t = "success") => setToast({ message: m, type: t, key: Date.now() }), []);
@@ -23,7 +24,9 @@ function useToast() {
 function SkeletonRows({ count = 3 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
-      {Array.from({ length: count }).map((_, i) => <div key={i} className="skeleton skeleton-row" />)}
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="skeleton skeleton-row" />
+      ))}
     </div>
   );
 }
@@ -37,7 +40,10 @@ function Modal({ title, onClose, children }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header"><h3>{title}</h3><button className="modal-close" onClick={onClose}>✕</button></div>
+        <div className="modal-header">
+          <h3>{title}</h3>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
         {children}
       </div>
     </div>
@@ -66,7 +72,8 @@ function fileBg(filename) {
 /* ── ProjectFolder ────────────────────────────────────────────────────────── */
 function ProjectFolder() {
   const { folderId } = useParams();
-  const navigate     = useNavigate();
+  const navigate = useNavigate();
+
   const [folder, setFolder]         = useState(null);
   const [allFolders, setAllFolders] = useState([]);
   const [activeTab, setActiveTab]   = useState("resources");
@@ -80,24 +87,25 @@ function ProjectFolder() {
   const [resources, setResources]     = useState([]);
   const [uploading, setUploading]     = useState(false);
   const [deletingRes, setDeletingRes] = useState(null);
-  const [viewingRes, setViewingRes]   = useState(null); // { url, filename, type }
-  const fileInputRef = useRef();
+  const fileInputRef  = useRef();   // for the Resources "Upload" button
+  const chatFileRef   = useRef();   // for the chat + button
+  const textareaRef   = useRef(null);
 
   // Notes
-  const [notes, setNotes]             = useState([]);
-  const [activeNote, setActiveNote]   = useState(null);
-  const [noteTitle, setNoteTitle]     = useState("");
-  const [noteContent, setNoteContent] = useState("");
-  const [savingNote, setSavingNote]   = useState(false);
+  const [notes, setNotes]               = useState([]);
+  const [activeNote, setActiveNote]     = useState(null);
+  const [noteTitle, setNoteTitle]       = useState("");
+  const [noteContent, setNoteContent]   = useState("");
+  const [savingNote, setSavingNote]     = useState(false);
   const [creatingNote, setCreatingNote] = useState(false);
 
   // Tasks
-  const [tasks, setTasks]             = useState([]);
-  const [taskInput, setTaskInput]     = useState("");
-  const [addingTask, setAddingTask]   = useState(false);
-  const [showTaskModal, setShowTaskModal] = useState(false);
-  const [togglingTask, setTogglingTask]   = useState(null);
-  const [deletingTask, setDeletingTask]   = useState(null);
+  const [tasks, setTasks]                   = useState([]);
+  const [taskInput, setTaskInput]           = useState("");
+  const [addingTask, setAddingTask]         = useState(false);
+  const [showTaskModal, setShowTaskModal]   = useState(false);
+  const [togglingTask, setTogglingTask]     = useState(null);
+  const [deletingTask, setDeletingTask]     = useState(null);
 
   // Chat
   const [messages, setMessages]       = useState([{ role: "bot", text: "👋 Hello! Ask me to summarize this project, generate a document, add tasks, or ask anything about your resources." }]);
@@ -111,7 +119,6 @@ function ProjectFolder() {
   // Load everything in parallel on mount
   useEffect(() => {
     if (!folderId) return;
-    // Fetch folder info + all folders + data in parallel
     Promise.all([
       api.getFolder(folderId),
       api.getFolders(),
@@ -122,7 +129,9 @@ function ProjectFolder() {
     api.getTasks(folderId).then(setTasks).catch(console.error).finally(() => setLoadingTasks(false));
   }, [folderId]);
 
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   // Ctrl+B
   useEffect(() => {
@@ -165,18 +174,21 @@ function ProjectFolder() {
       const res = await api.uploadResource(folderId, file);
       setResources((p) => [...p, res]);
       showToast("✅ File uploaded and indexed!");
-    } catch (err) { showToast(err.message, "error"); }
-    finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = ""; }
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (chatFileRef.current) chatFileRef.current.value = "";
+    }
   };
 
   const handleViewResource = async (resource) => {
     const ext = resource.filename.split(".").pop()?.toLowerCase();
     const url = api.getResourceUrl(folderId, resource.id);
     if (ext === "pdf" || ext === "txt" || ext === "md") {
-      // Open in browser
       window.open(url, "_blank");
     } else {
-      // Download
       try {
         const token = localStorage.getItem("tasknest_token");
         const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -197,8 +209,11 @@ function ProjectFolder() {
       await api.deleteResource(folderId, id);
       setResources((p) => p.filter((r) => r.id !== id));
       showToast("🗑️ Deleted");
-    } catch (err) { showToast(err.message, "error"); }
-    finally { setDeletingRes(null); }
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setDeletingRes(null);
+    }
   };
 
   /* ── Note handlers ──────────────────────────────────────────────────────── */
@@ -208,8 +223,11 @@ function ProjectFolder() {
       const note = await api.createNote(folderId, "Untitled Note", "");
       setNotes((p) => [note, ...p]);
       setActiveNote(note); setNoteTitle(note.title); setNoteContent("");
-    } catch (err) { showToast(err.message, "error"); }
-    finally { setCreatingNote(false); }
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setCreatingNote(false);
+    }
   };
 
   const handleSaveNote = async () => {
@@ -220,15 +238,20 @@ function ProjectFolder() {
       setNotes((p) => p.map((n) => (n.id === updated.id ? updated : n)));
       setActiveNote(updated);
       showToast("✅ Saved");
-    } catch (err) { showToast(err.message, "error"); }
-    finally { setSavingNote(false); }
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setSavingNote(false);
+    }
   };
 
   const handleDeleteNote = async (noteId) => {
     if (!confirm("Delete?")) return;
     await api.deleteNote(folderId, noteId).catch(console.error);
     setNotes((p) => p.filter((n) => n.id !== noteId));
-    if (activeNote?.id === noteId) { setActiveNote(null); setNoteTitle(""); setNoteContent(""); }
+    if (activeNote?.id === noteId) {
+      setActiveNote(null); setNoteTitle(""); setNoteContent("");
+    }
   };
 
   /* ── Task handlers ──────────────────────────────────────────────────────── */
@@ -240,8 +263,11 @@ function ProjectFolder() {
       setTasks((p) => [...p, t]);
       setTaskInput(""); setShowTaskModal(false);
       showToast("✅ Task added");
-    } catch (err) { showToast(err.message, "error"); }
-    finally { setAddingTask(false); }
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setAddingTask(false);
+    }
   };
 
   const toggleTask = async (task) => {
@@ -249,8 +275,11 @@ function ProjectFolder() {
     try {
       const updated = await api.updateTask(folderId, task.id, { completed: !task.completed });
       setTasks((p) => p.map((t) => (t.id === updated.id ? updated : t)));
-    } catch (err) { showToast(err.message, "error"); }
-    finally { setTogglingTask(null); }
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setTogglingTask(null);
+    }
   };
 
   const handleDeleteTask = async (id) => {
@@ -258,8 +287,11 @@ function ProjectFolder() {
     try {
       await api.deleteTask(folderId, id);
       setTasks((p) => p.filter((t) => t.id !== id));
-    } catch (err) { showToast(err.message, "error"); }
-    finally { setDeletingTask(null); }
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setDeletingTask(null);
+    }
   };
 
   /* ── Chat ───────────────────────────────────────────────────────────────── */
@@ -268,7 +300,8 @@ function ProjectFolder() {
     try {
       const blob = await api.downloadDocument(targetFolderId, fmt);
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = `document.${fmt}`; a.click();
+      const a = document.createElement("a");
+      a.href = url; a.download = `document.${fmt}`; a.click();
       URL.revokeObjectURL(url);
       setMessages((p) => [...p.slice(0, -1), { role: "bot", text: `✅ ${fmt.toUpperCase()} downloaded!` }]);
     } catch (err) {
@@ -280,20 +313,26 @@ function ProjectFolder() {
     const text = query.trim();
     if (!text || chatLoading) return;
 
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+
     setMessages((p) => [...p, { role: "user", text }]);
     setQuery("");
     setChatLoading(true);
     await api.saveFolderMessage(folderId, "user", text, null, 0, sessionId).catch(() => {});
 
     try {
-      // ── Folder navigation from inside folder ──────────────────────────────
+      // ── Folder navigation ────────────────────────────────────────────────
       const navKw = ["open", "go to", "navigate to", "switch to", "take me to"];
       const msgLower = text.toLowerCase();
 
       if (navKw.some((k) => msgLower.includes(k))) {
         const matched = allFolders.find(
-          (f) => f.id !== parseInt(folderId) && f.name.toLowerCase() === msgLower
-            .replace(/open|go to|navigate to|switch to|take me to/gi, "").trim()
+          (f) => f.id !== parseInt(folderId) &&
+            f.name.toLowerCase() === msgLower
+              .replace(/open|go to|navigate to|switch to|take me to/gi, "").trim()
         );
         if (matched) {
           const botMsg = { role: "bot", text: `📁 Navigating to **${matched.name}**...` };
@@ -303,7 +342,6 @@ function ProjectFolder() {
           setChatLoading(false);
           return;
         } else if (navKw.some((k) => msgLower.includes(k))) {
-          // Only report not found if they clearly intended navigation
           const otherFolders = allFolders.filter((f) => f.id !== parseInt(folderId));
           if (otherFolders.length > 0) {
             const list = otherFolders.map((f) => `• ${f.name}`).join("\n");
@@ -318,12 +356,10 @@ function ProjectFolder() {
 
       const res = await api.chat(folderId, text, sessionId);
 
-      // Summary saved — refresh notes
       if (res.summary_saved) {
         api.getNotes(folderId).then(setNotes).catch(console.error);
       }
 
-      // Document pending — show format buttons
       if (res.intent === "document_agent" && res.doc_pending) {
         const botMsg = {
           role: "bot",
@@ -346,14 +382,18 @@ function ProjectFolder() {
       await api.saveFolderMessage(folderId, "bot", res.answer, res.intent, res.sources_used || 0, sessionId).catch(() => {});
     } catch (err) {
       setMessages((p) => [...p, { role: "bot", text: "⚠️ " + err.message }]);
-    } finally { setChatLoading(false); }
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   return (
     <div className="app">
       {toastEl}
+
+      {/* ── NAV ─────────────────────────────────────────────────────────── */}
       <div className="nav">
-        <Link to="/" className="link"><h1 className="title">DevNest</h1></Link>
+        <Link to="/" className="link"><h1 className="title">ResHub</h1></Link>
         {folder && <span className="folder-breadcrumb">/ {folder.name}</span>}
         <Link to="/profile" style={{ marginLeft: "auto" }}>
           <img src={p_logo} alt="Profile" className="profile_logo" />
@@ -361,31 +401,50 @@ function ProjectFolder() {
       </div>
 
       <div className="main-content">
+
         {/* ── LEFT PANEL ──────────────────────────────────────────────────── */}
         <div className="folders">
           <div className="tabs">
             {["resources", "notes", "todo"].map((tab) => (
-              <button key={tab} className={`tab-btn ${activeTab === tab ? "active" : ""}`} onClick={() => setActiveTab(tab)}>
+              <button
+                key={tab}
+                className={`tab-btn ${activeTab === tab ? "active" : ""}`}
+                onClick={() => setActiveTab(tab)}
+              >
                 {tab === "resources" ? "📁 Resources" : tab === "notes" ? "📝 Notes" : "✅ To Do"}
               </button>
             ))}
           </div>
 
-          {/* ── Resources (File Manager) ───────────────────────────────────── */}
+          {/* ── Resources ─────────────────────────────────────────────────── */}
           {activeTab === "resources" && (
             <div className="resources-section">
               <div className="section-header">
                 <h2>Resources</h2>
-                <button className="upload-btn" onClick={() => fileInputRef.current.click()} disabled={uploading}>
+                <button
+                  className="upload-btn"
+                  onClick={() => fileInputRef.current.click()}
+                  disabled={uploading}
+                >
                   {uploading ? <><span className="btn-spinner" />Uploading...</> : "Upload"}
                 </button>
-                <input ref={fileInputRef} type="file" style={{ display: "none" }}
-                  accept=".pdf,.txt,.docx,.md,.csv" onChange={handleUpload} />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  style={{ display: "none" }}
+                  accept=".pdf,.txt,.docx,.md,.csv"
+                  onChange={handleUpload}
+                />
               </div>
-              {uploading && <div className="upload-progress-wrap"><div className="upload-progress-bar" /></div>}
-
+              {uploading && (
+                <div className="upload-progress-wrap">
+                  <div className="upload-progress-bar" />
+                </div>
+              )}
               <div className="file-manager-grid">
-                {loadingResources ? <SkeletonRows count={3} /> : resources.length === 0 ? (
+                {loadingResources ? (
+                  <SkeletonRows count={3} />
+                ) : resources.length === 0 ? (
                   <p className="empty-msg">No files uploaded yet. Upload PDF, DOCX, TXT, MD, or CSV files.</p>
                 ) : resources.map((r) => (
                   <div
@@ -425,16 +484,27 @@ function ProjectFolder() {
                 <div className="section-header">
                   <h2>Notes</h2>
                   <button className="add_button" onClick={handleNewNote} disabled={creatingNote}>
-                    {creatingNote ? <span className="btn-spinner" style={{ width: 12, height: 12 }} /> : "+"}
+                    {creatingNote
+                      ? <span className="btn-spinner" style={{ width: 12, height: 12 }} />
+                      : "+"}
                   </button>
                 </div>
                 <div className="notes-list">
-                  {loadingNotes ? <SkeletonRows count={4} /> : notes.length === 0 ? (
+                  {loadingNotes ? (
+                    <SkeletonRows count={4} />
+                  ) : notes.length === 0 ? (
                     <p className="empty-msg">No notes yet.</p>
                   ) : notes.map((n) => (
-                    <div key={n.id} className={`note-item ${activeNote?.id === n.id ? "active" : ""}`} onClick={() => { setActiveNote(n); setNoteTitle(n.title); setNoteContent(n.content || ""); }}>
+                    <div
+                      key={n.id}
+                      className={`note-item ${activeNote?.id === n.id ? "active" : ""}`}
+                      onClick={() => { setActiveNote(n); setNoteTitle(n.title); setNoteContent(n.content || ""); }}
+                    >
                       <span className="note-item-title">{n.title || "Untitled"}</span>
-                      <button className="resource-delete-btn" onClick={(e) => { e.stopPropagation(); handleDeleteNote(n.id); }}>✕</button>
+                      <button
+                        className="resource-delete-btn"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteNote(n.id); }}
+                      >✕</button>
                     </div>
                   ))}
                 </div>
@@ -442,18 +512,32 @@ function ProjectFolder() {
               <div className="note-editor">
                 {activeNote ? (
                   <>
-                    <input className="note-title-input" value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} placeholder="Note title..." />
-                    <textarea className="note-content-input" value={noteContent} onChange={(e) => setNoteContent(e.target.value)} placeholder="Start writing..." />
+                    <input
+                      className="note-title-input"
+                      value={noteTitle}
+                      onChange={(e) => setNoteTitle(e.target.value)}
+                      placeholder="Note title..."
+                    />
+                    <textarea
+                      className="note-content-input"
+                      value={noteContent}
+                      onChange={(e) => setNoteContent(e.target.value)}
+                      placeholder="Start writing..."
+                    />
                     <button className="upload-btn" onClick={handleSaveNote} disabled={savingNote}>
                       {savingNote ? <><span className="btn-spinner" />Saving...</> : "Save Note"}
                     </button>
                   </>
-                ) : <div className="note-placeholder"><p>Select a note or create a new one</p></div>}
+                ) : (
+                  <div className="note-placeholder">
+                    <p>Select a note or create a new one</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* ── Todo (Markdown rendered) ───────────────────────────────────── */}
+          {/* ── Todo ──────────────────────────────────────────────────────── */}
           {activeTab === "todo" && (
             <div className="todo-section">
               <div className="add_task">
@@ -461,17 +545,42 @@ function ProjectFolder() {
                 <button className="add_button" onClick={() => setShowTaskModal(true)}>+</button>
               </div>
               <ul className="todo-list">
-                {loadingTasks ? <SkeletonRows count={3} /> : tasks.length === 0 ? (
+                {loadingTasks ? (
+                  <SkeletonRows count={3} />
+                ) : tasks.length === 0 ? (
                   <li className="empty-msg">No tasks yet.</li>
                 ) : tasks.map((task) => (
-                  <li key={task.id} className={`task-item${togglingTask === task.id ? " toggling" : ""}`}>
-                    <input type="checkbox" checked={task.completed} disabled={togglingTask === task.id} onChange={() => toggleTask(task)} />
-                    <span className="task-md" style={{ textDecoration: task.completed ? "line-through" : "none", flex: 1, opacity: task.completed ? 0.5 : 1 }}>
+                  <li
+                    key={task.id}
+                    className={`task-item${togglingTask === task.id ? " toggling" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={task.completed}
+                      disabled={togglingTask === task.id}
+                      onChange={() => toggleTask(task)}
+                    />
+                    <span
+                      className="task-md"
+                      style={{
+                        textDecoration: task.completed ? "line-through" : "none",
+                        flex: 1,
+                        opacity: task.completed ? 0.5 : 1,
+                      }}
+                    >
                       <ReactMarkdown>{task.text}</ReactMarkdown>
                     </span>
-                    {task.deadline && <span className="task-deadline">📅 {task.deadline.slice(0, 10)}</span>}
-                    <button className="resource-delete-btn" onClick={() => handleDeleteTask(task.id)} disabled={deletingTask === task.id}>
-                      {deletingTask === task.id ? <span className="btn-spinner btn-spinner--dark" style={{ width: 10, height: 10 }} /> : "✕"}
+                    {task.deadline && (
+                      <span className="task-deadline">📅 {task.deadline.slice(0, 10)}</span>
+                    )}
+                    <button
+                      className="resource-delete-btn"
+                      onClick={() => handleDeleteTask(task.id)}
+                      disabled={deletingTask === task.id}
+                    >
+                      {deletingTask === task.id
+                        ? <span className="btn-spinner btn-spinner--dark" style={{ width: 10, height: 10 }} />
+                        : "✕"}
                     </button>
                   </li>
                 ))}
@@ -483,33 +592,48 @@ function ProjectFolder() {
         {/* ── CHATBOT ──────────────────────────────────────────────────────── */}
         <div className="chatbot">
           <div className="chatbot-topbar">
-            <div>
-              <span style={{ fontWeight: 500, fontSize: 15 }}>🤖 RAG Assistant</span>
-              {folder && <span className="chatbot-folder-tag" style={{ marginLeft: 8 }}>{folder.name}</span>}
-            </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <button className="chatbot-icon-btn" onClick={() => fileInputRef.current.click()} title="Upload file">⬆</button>
-              <button className="chatbot-icon-btn" onClick={newConversation} title="New conversation">✦</button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <button className="chatbot-icon-btn" onClick={toggleHistory} title="History (Ctrl+B)">☰</button>
+              {folder && (
+                <span className="chatbot-folder-tag">{folder.name}</span>
+              )}
             </div>
+            <span style={{ fontWeight: 500, fontSize: 19 }}>ResHub Assistant</span>
           </div>
 
           <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+
             {/* History sidebar */}
             {showHistory && (
               <div className="history-sidebar">
-                <p className="history-label">History</p>
-                {sessions.length === 0 && <p className="history-empty">No conversations yet.</p>}
+                <div className="history-newchat">
+                  <p className="history-label">History</p>
+                  <button className="chatbot-icon-btn" onClick={newConversation} title="New conversation">✦</button>
+                </div>
+                {sessions.length === 0 && (
+                  <p className="history-empty">No conversations yet.</p>
+                )}
                 {sessions.map((s) => (
-                  <div key={s.session_id} className="history-item" onClick={() => loadSession(s)}>
-                    <span className="history-item-text">{s.messages[0]?.text?.slice(0, 36) || "Conversation"}...</span>
-                    <button className="history-delete-btn" onClick={(e) => deleteSession(e, s.session_id)}>✕</button>
+                  <div
+                    key={s.session_id}
+                    className="history-item"
+                    onClick={() => loadSession(s)}
+                  >
+                    <span className="history-item-text">
+                      {s.messages[0]?.text?.slice(0, 36) || "Conversation"}...
+                    </span>
+                    <button
+                      className="history-delete-btn"
+                      onClick={(e) => deleteSession(e, s.session_id)}
+                    >✕</button>
                   </div>
                 ))}
               </div>
             )}
 
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+              {/* Messages */}
               <div className="chat-messages">
                 {messages.map((m, i) => (
                   <div key={i} className={`chat-bubble ${m.role}`}>
@@ -523,48 +647,106 @@ function ProjectFolder() {
                       </div>
                     )}
                     {m.showCopy && (
-                      <button className="copy-to-notes-btn" onClick={async () => {
-                        try {
-                          const n = await api.createNote(folderId, m.text.slice(0, 60), m.text);
-                          setNotes((p) => [n, ...p]);
-                          showToast("📝 Saved to Notes!");
-                        } catch (err) { showToast(err.message, "error"); }
-                      }}>📝 Copy to Notes</button>
+                      <button
+                        className="copy-to-notes-btn"
+                        onClick={async () => {
+                          try {
+                            const n = await api.createNote(folderId, m.text.slice(0, 60), m.text);
+                            setNotes((p) => [n, ...p]);
+                            showToast("📝 Saved to Notes!");
+                          } catch (err) { showToast(err.message, "error"); }
+                        }}
+                      >📝 Copy to Notes</button>
                     )}
                   </div>
                 ))}
                 {chatLoading && (
                   <div className="chat-bubble bot">
-                    <div className="bubble-text"><div className="typing-dots"><span/><span/><span/></div></div>
+                    <div className="bubble-text">
+                      <div className="typing-dots"><span /><span /><span /></div>
+                    </div>
                   </div>
                 )}
                 <div ref={chatEndRef} />
               </div>
 
-              <div className="chat_input_container" style={{ margin: "10px 16px 16px" }}>
-                <input type="text" className="query_box" placeholder="Summarize project, generate document, navigate folders..."
-                  value={query} onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()} />
-                <button className="send_btn" onClick={sendMessage} disabled={chatLoading}>
-                  {chatLoading ? "..." : "Send"}
-                </button>
+              {/* ── Chat Input ─────────────────────────────────────────────── */}
+              <div className="chat_input_wrapper">
+                <textarea
+                  ref={textareaRef}
+                  className="query_box"
+                  placeholder="Open a folder, add tasks, generate documents..."
+                  value={query}
+                  rows={1}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    e.target.style.height = "auto";
+                    e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                />
+                <div className="chat_toolbar">
+                  <button
+                    className="plus_btn"
+                    onClick={() => chatFileRef.current.click()}
+                    title="Upload file"
+                  >+</button>
+                  <input
+                    type="file"
+                    ref={chatFileRef}
+                    style={{ display: "none" }}
+                    accept=".pdf,.txt,.docx,.md,.csv"
+                    onChange={handleUpload}
+                  />
+                  <button
+                    className="send_btnf"
+                    onClick={sendMessage}
+                    disabled={chatLoading || !query.trim()}
+                  >
+                    {chatLoading ? "..." : ""}
+                    {!chatLoading && (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2.5"
+                        strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="19" x2="12" y2="5" />
+                        <polyline points="5 12 12 5 19 12" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
+
             </div>
           </div>
         </div>
       </div>
 
+      {/* ── Task Modal ────────────────────────────────────────────────────── */}
       {showTaskModal && (
         <Modal title="Add Task" onClose={() => setShowTaskModal(false)}>
           <div className="modal-body">
             <label>Task Name *</label>
-            <input autoFocus className="modal-input" placeholder="e.g. Write unit tests"
-              value={taskInput} onChange={(e) => setTaskInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddTask()} />
+            <input
+              autoFocus
+              className="modal-input"
+              placeholder="e.g. Write unit tests"
+              value={taskInput}
+              onChange={(e) => setTaskInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
+            />
           </div>
           <div className="modal-footer">
             <button className="modal-cancel" onClick={() => setShowTaskModal(false)}>Cancel</button>
-            <button className="modal-confirm" onClick={handleAddTask} disabled={addingTask || !taskInput.trim()}>
+            <button
+              className="modal-confirm"
+              onClick={handleAddTask}
+              disabled={addingTask || !taskInput.trim()}
+            >
               {addingTask ? <><span className="btn-spinner" />Adding...</> : "Add Task"}
             </button>
           </div>

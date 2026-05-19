@@ -394,3 +394,7 @@ input {
   opacity: 0.6;
   transition: opacity 0.2s;
 }
+.history-newchat{
+  display: flex;
+  gap: 100px;
+}

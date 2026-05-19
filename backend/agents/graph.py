@@ -72,7 +72,7 @@ def classify_intent(state: AgentState) -> AgentState:
         return state
 
     # LLM classification for natural / ambiguous phrasing
-    classify_prompt = (
+    classify_prompt = ( 
         "You are a task router for a project management app called ResHub.\n"
         "Classify the user message into EXACTLY ONE intent:\n\n"
         "- folder_agent   : user EXPLICITLY wants to create, delete, rename, or list folders\n"

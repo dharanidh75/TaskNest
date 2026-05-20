@@ -19,29 +19,36 @@ EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 10080))
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 # ── User cache ────────────────────────────────────────────────────────────────
-# Every authenticated request previously hit the DB to fetch the user row.
-# For /auth/me and every folder/task/note load that's 1 extra query per request.
-# Cache maps user_id → User object for 5 minutes.
-# Thread-safe via a lock (FastAPI runs in a thread pool).
-_user_cache: TTLCache = TTLCache(maxsize=500, ttl=300)
+# Cache only the user_id validity (True/False), NOT the ORM User object.
+# Caching ORM objects causes DetachedInstanceError when the originating
+# session closes and a new request tries to access lazy-loaded attributes.
+_user_id_cache: TTLCache = TTLCache(maxsize=500, ttl=300)
 _cache_lock = threading.Lock()
 
 
 def _get_cached_user(user_id: int, db: Session) -> User | None:
+    """
+    Always loads the User from the CURRENT db session to prevent
+    DetachedInstanceError. The cache only skips the DB hit for known-invalid ids.
+    """
     with _cache_lock:
-        if user_id in _user_cache:
-            return _user_cache[user_id]
+        known = _user_id_cache.get(user_id)
+
+    # known=False means this id was confirmed non-existent within TTL
+    if known is False:
+        return None
+
+    # Always re-fetch from the active session — no ORM object is ever cached
     user = db.query(User).filter(User.id == user_id).first()
-    if user:
-        with _cache_lock:
-            _user_cache[user_id] = user
+    with _cache_lock:
+        _user_id_cache[user_id] = bool(user)
     return user
 
 
 def invalidate_user_cache(user_id: int):
     """Call this after any profile update so stale data isn't served."""
     with _cache_lock:
-        _user_cache.pop(user_id, None)
+        _user_id_cache.pop(user_id, None)
 
 
 # ── Password hashing ──────────────────────────────────────────────────────────

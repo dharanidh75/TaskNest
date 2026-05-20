@@ -2,8 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
+import re
 from database import get_db, Folder, Note
 from auth import get_current_user, User
+
+
+def _normalize(text: str) -> str:
+    """Remove filler articles so 'create an document' == 'create document'."""
+    return re.sub(r'\b(a|an|the)\b\s*', '', text.lower()).strip()
 
 router = APIRouter(tags=["chat"])
 
@@ -43,10 +49,11 @@ def chat(
         raise HTTPException(404, "Folder not found")
 
     msg_lower = body.message.lower()
+    msg_norm  = _normalize(body.message)   # articles stripped for fuzzy matching
 
     # ── Summary intent ────────────────────────────────────────────────────────
-    summary_kw = ["summarize", "summary", "summarise", "make a summary", "create summary"]
-    if any(k in msg_lower for k in summary_kw):
+    summary_kw = ["summarize", "summary", "summarise", "make summary", "create summary"]
+    if any(k in msg_norm for k in summary_kw):
         from rag.chroma_store import query_documents
         from langchain_groq import ChatGroq
         from langchain_core.messages import SystemMessage, HumanMessage
@@ -92,8 +99,8 @@ def chat(
     doc_kw = ["generate document", "create document", "create doc", "generate doc",
               "make document", "create pdf", "generate pdf", "create docx", "generate docx",
               "make pdf", "make docx", "download document", "export document"]
-    if any(k in msg_lower for k in doc_kw):
-        fmt = "pdf" if "pdf" in msg_lower else ("docx" if "docx" in msg_lower or "doc" in msg_lower else None)
+    if any(k in msg_norm for k in doc_kw):
+        fmt = "pdf" if "pdf" in msg_norm else ("docx" if "docx" in msg_norm or "doc" in msg_norm else None)
         return {
             "answer": f"📄 I'll generate a document for **{folder.name}**. Which format do you prefer?",
             "intent": "document_agent",
@@ -125,6 +132,7 @@ def global_chat(
     # ── Folder navigation intent (professional exact match) ───────────────────
     nav_kw = ["open", "go to", "navigate to", "switch to", "take me to", "open folder"]
     msg_lower = body.message.lower()
+    msg_norm  = _normalize(body.message)
 
     if any(k in msg_lower for k in nav_kw):
         folders = db.query(Folder).filter(Folder.user_id == user.id).all()
@@ -149,11 +157,11 @@ def global_chat(
     # ── Document generation from home (by project name) ───────────────────────
     doc_kw = ["generate document", "create document", "create doc", "generate doc",
               "make pdf", "create pdf", "generate pdf", "create docx", "generate docx"]
-    if any(k in msg_lower for k in doc_kw):
+    if any(k in msg_norm for k in doc_kw):
         folders = db.query(Folder).filter(Folder.user_id == user.id).all()
         matched = next((f for f in folders if f.name.lower() in msg_lower), None)
         if matched:
-            fmt = "pdf" if "pdf" in msg_lower else ("docx" if "docx" in msg_lower or "doc" in msg_lower else None)
+            fmt = "pdf" if "pdf" in msg_norm else ("docx" if "docx" in msg_norm or "doc" in msg_norm else None)
             return {
                 "answer": f"📄 Generating document for **{matched.name}**. Which format — PDF or DOCX?",
                 "intent": "document_agent",

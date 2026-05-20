@@ -5,7 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CHROMA_PATH = os.getenv("CHROMA_PATH", "./chroma_data")
+# Use absolute path so ChromaDB finds the same data regardless of
+# which directory uvicorn is launched from.
+_DEFAULT_CHROMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "chroma_data")
+CHROMA_PATH = os.path.abspath(os.getenv("CHROMA_PATH", _DEFAULT_CHROMA))
 
 # Use sentence-transformers for local embeddings (no API cost)
 _embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(

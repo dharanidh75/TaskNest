@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import create_tables
-from routers import auth_router, folders, resources, notes, tasks, chat, history
+from routers import auth_router, folders, resources, notes, tasks, chat
 from routers import document
 
 app = FastAPI(title="DevNest API", version="2.0.0")
@@ -19,6 +19,22 @@ app.add_middleware(
 async def startup():
     create_tables()
     print("✅ DB tables ready")
+
+    # Migrate: add bio column to users table if it doesn't exist yet
+    # Safe to run on every startup — ALTER TABLE is a no-op if column exists
+    # on PostgreSQL this needs a try/except; on SQLite it raises OperationalError
+    try:
+        from database import engine
+        with engine.connect() as conn:
+            conn.execute(
+                __import__("sqlalchemy").text(
+                    "ALTER TABLE users ADD COLUMN bio TEXT"
+                )
+            )
+            conn.commit()
+        print("✅ Migrated: users.bio column added")
+    except Exception:
+        pass  # Column already exists — nothing to do
 
     print("⏳ Loading embedding model...")
     from rag.chroma_store import _embedding_fn
@@ -43,7 +59,6 @@ app.include_router(resources.router)
 app.include_router(notes.router)
 app.include_router(tasks.router)
 app.include_router(chat.router)
-app.include_router(history.router)
 app.include_router(document.router)
 
 

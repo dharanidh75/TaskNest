@@ -52,7 +52,8 @@ def classify_intent(state: AgentState) -> AgentState:
 
     # Fast-path for unambiguous keywords — no LLM call needed
     folder_kw   = ["create folder", "new folder", "delete folder", "list folders",
-                   "make folder", "make a folder", "create a folder", "add folder"]
+                   "make folder", "make a folder", "create a folder", "add folder",
+                   "create a project folder", "new project folder", "make project folder"]
     task_kw     = ["add task", "create task", "new task", "mark task", "complete task",
                    "list task", "show task", "to-do", "todo", "add to-do", "create to-do"]
     notes_kw    = ["save note", "create note", "add note", "copy to notes", "make note"]
@@ -71,16 +72,26 @@ def classify_intent(state: AgentState) -> AgentState:
         state["intent"] = "resource_agent"
         return state
 
+    # Fast-path: document/PDF/DOCX generation is always rag_agent (handled upstream in chat.py)
+    doc_creation_kw = ["create document", "generate document", "make document", "create doc",
+                       "generate doc", "make doc", "create pdf", "generate pdf", "make pdf",
+                       "create docx", "generate docx", "make docx", "create a document",
+                       "create an document", "make a document", "make an document"]
+    if any(k in msg for k in doc_creation_kw):
+        state["intent"] = "rag_agent"
+        return state
+
     # LLM classification for natural / ambiguous phrasing
     classify_prompt = ( 
         "You are a task router for a project management app called ResHub.\n"
         "Classify the user message into EXACTLY ONE intent:\n\n"
         "- folder_agent   : user EXPLICITLY wants to create, delete, rename, or list folders\n"
         "- task_agent     : user EXPLICITLY wants to add, list, or complete to-do tasks\n"
-        "- notes_agent    : user EXPLICITLY wants to save or create a note\n"
+        "- notes_agent    : user EXPLICITLY wants to save or create a NOTE (short text note)\n"
         "- resource_agent : user EXPLICITLY wants to see uploaded files\n"
         "- rag_agent      : greetings, questions, general chat, or document questions\n\n"
         "RULE: Greetings like hello/hi/hey/thanks are ALWAYS rag_agent.\n"
+        "RULE: Requests to 'create a document', 'generate a document', 'make a document', or 'create a pdf/docx' are ALWAYS rag_agent — NOT notes_agent.\n"
         "RULE: Only use a specific agent when the user clearly requests that action.\n"
         "Reply with ONLY the intent name, nothing else.\n\n"
         f"User message: {state['user_message']}"
@@ -254,19 +265,15 @@ def rag_agent(state: AgentState) -> AgentState:
     if docs:
         context = "\n\n---\n\n".join(docs)
         system_prompt = (
-            "You are ResHub's intelligent project assistant. "
-            "Answer the user's question using ONLY the context below from their uploaded project resources. "
-            "If the context doesn't contain the answer, say so honestly. "
-            "Do NOT give generic OS or computer instructions — stay focused on project content.\n\n"
-            f"CONTEXT:\n{context}"
+            "You are a helpful assistant inside ResHub. "
+            "Use the following content to inform your answer, but reply naturally and conversationally — "
+            "do not quote or reference the content explicitly, just use it to know what to say.\n\n"
+            f"{context}"
         )
     else:
         system_prompt = (
-            "You are ResHub's intelligent project assistant. "
-            "No resources have been uploaded to this project folder yet. "
-            "Do NOT give generic computer or OS instructions. "
-            "If the user wants to create folders, tasks, or notes — tell them to simply ask you directly, "
-            "e.g. 'create folder X' or 'add task Y'."
+            "You are a helpful assistant inside ResHub. "
+            "Reply naturally and conversationally."
         )
 
     response = llm.invoke([

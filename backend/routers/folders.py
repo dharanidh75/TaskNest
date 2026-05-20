@@ -77,3 +77,32 @@ def delete_folder(folder_id: int, db: Session = Depends(get_db), user: User = De
     db.delete(folder)
     db.commit()
     return {"message": "Folder deleted"}
+
+
+@router.get("/{folder_id}/stats/")
+def get_folder_stats(folder_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """
+    Returns resource, note, task, and chat counts for a folder.
+    Used by the frontend profile page and any stats widgets.
+    """
+    from database import Resource, Note, Task, ChatHistory
+    folder = db.query(Folder).filter(Folder.id == folder_id, Folder.user_id == user.id).first()
+    if not folder:
+        raise HTTPException(status_code=404, detail="Folder not found")
+
+    resource_count  = db.query(Resource).filter(Resource.folder_id == folder_id).count()
+    note_count      = db.query(Note).filter(Note.folder_id == folder_id).count()
+    task_count      = db.query(Task).filter(Task.folder_id == folder_id).count()
+    tasks_done      = db.query(Task).filter(Task.folder_id == folder_id, Task.completed == True).count()
+    chat_count      = db.query(ChatHistory).filter(ChatHistory.folder_id == folder_id).count()
+
+    return {
+        "folder_id":        folder_id,
+        "folder_name":      folder.name,
+        "resources":        resource_count,
+        "notes":            note_count,
+        "tasks_total":      task_count,
+        "tasks_completed":  tasks_done,
+        "tasks_pending":    task_count - tasks_done,
+        "chat_messages":    chat_count,
+    }

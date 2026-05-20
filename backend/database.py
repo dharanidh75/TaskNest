@@ -13,8 +13,12 @@ engine = create_engine(
     DATABASE_URL,
     pool_size=10,
     max_overflow=20,
-    pool_pre_ping=True,
-    pool_recycle=1800,
+    pool_pre_ping=True,       # test connection before use — kills stale ones silently
+    pool_recycle=280,         # recycle before MySQL's default wait_timeout (300s)
+    pool_timeout=30,          # don't hang forever waiting for a connection
+    connect_args={
+        "connect_timeout": 10,
+    },
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -97,8 +101,17 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+    except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        raise
     finally:
-        db.close()
+        try:
+            db.close()
+        except Exception:
+            pass  # swallow connection-reset errors on close
 
 
 def create_tables():

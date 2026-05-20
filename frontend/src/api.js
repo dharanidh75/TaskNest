@@ -57,9 +57,10 @@ async function request(method, path, body = null, isFormData = false) {
 }
 
 // Raw fetch for blob (file download)
-async function requestBlob(path) {
+async function requestBlob(path, method = "GET") {
   const token = getToken();
   const res = await fetch(BASE + path, {
+    method,
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Download failed");
@@ -140,7 +141,7 @@ export const api = {
 
   // Document generation — triggers download
   downloadDocument: async (folderId, fmt = "docx") => {
-    const blob = await requestBlob(`/folders/${folderId}/generate-document/?fmt=${fmt}`);
+    const blob = await requestBlob(`/folders/${folderId}/generate-document/?fmt=${fmt}`, "POST");
     return blob;
   },
 

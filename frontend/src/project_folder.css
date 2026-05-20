@@ -908,3 +908,95 @@
   display: flex;
   gap: 100px;
 }
+/* ── Resource header actions ──────────────────────────────────────────────── */
+.resource-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.gen-doc-btn {
+  padding: 6px 12px;
+  border: 1.5px solid #2b6777;
+  background: #fff;
+  color: #2b6777;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.gen-doc-btn:hover:not(:disabled) {
+  background: #2b6777;
+  color: #fff;
+}
+
+.gen-doc-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── File card action row ─────────────────────────────────────────────────── */
+.file-card-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.file-card:hover .file-card-actions {
+  opacity: 1;
+}
+
+.file-card-action-btn {
+  background: rgba(255,255,255,0.85);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-size: 11px;
+  cursor: pointer;
+  line-height: 1.6;
+  transition: background 0.12s;
+}
+
+.file-card-action-btn.download {
+  color: #2b6777;
+}
+
+.file-card-action-btn.download:hover {
+  background: #d4edf5;
+}
+
+.file-card-action-btn.delete {
+  color: #c0392b;
+}
+
+.file-card-action-btn.delete:hover {
+  background: #fdecea;
+}
+
+
+/* ── File card loading overlay ────────────────────────────────────────────── */
+.file-card.loading {
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.file-card-loading-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}

@@ -1,26 +1,32 @@
+/* ── Edit profile page ────────────────────────────────────────────────────── */
 .edit-container {
   flex: 1;
   background-color: #c8d8e4;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 24px 16px;      /* breathing room on small screens */
+  box-sizing: border-box;
 }
 
+/* was: fixed height:400px; width:570px — caused card to overflow/clip */
 .edit-card {
   background-color: #52ab98;
-  height: 400px;
-  width: 570px;
-  padding: 60px;
+  width: 100%;
+  max-width: 570px;
+  padding: 40px;
   border-radius: 15px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-sizing: border-box;
 }
 
 .edit-card h2 {
   text-align: center;
   color: black;
+  margin: 0 0 8px 0;
 }
 
 .form-group {
@@ -32,14 +38,23 @@
 .form-group label {
   color: black;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .form-group input,
 .form-group textarea {
-  padding: 8px;
+  padding: 8px 10px;
   border-radius: 6px;
   border: none;
   outline: none;
+  font-size: 14px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  box-shadow: 0 0 0 2px rgba(43, 103, 119, 0.35);
 }
 
 textarea {
@@ -47,18 +62,39 @@ textarea {
   height: 80px;
 }
 
+/* ── Save button ──────────────────────────────────────────────────────────── */
 .save-btn {
-  padding: 10px;
+  display: block;
+  width: fit-content;
+  margin: 16px auto 0;      /* replaced the hard margin-top:45px */
+  padding: 10px 28px;
   background-color: white;
   color: #2b6777;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
-  margin-top: 45px;
+  font-size: 15px;
+  transition: background 0.2s, transform 0.15s;
 }
 
-.save-btn:hover {
+.save-btn:hover:not(:disabled) {
   background-color: #f0f0f0;
   transform: scale(1.05);
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .edit-card {
+    padding: 24px 18px;
+  }
+
+  .edit-card h2 {
+    font-size: 18px;
+  }
 }

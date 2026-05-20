@@ -61,12 +61,7 @@ function fileIcon(filename) {
 }
 
 function fileBg(filename) {
-  const ext = filename.split(".").pop()?.toLowerCase();
-  if (ext === "pdf") return "#fde8e8";
-  if (ext === "docx" || ext === "doc") return "#e8f0fd";
-  if (ext === "csv") return "#e8fde8";
-  if (ext === "md") return "#fdf6e8";
-  return "#f0f0f0";
+  return "#e8f0fd"; // all cards blue
 }
 
 /* ── ProjectFolder ────────────────────────────────────────────────────────── */
@@ -87,8 +82,10 @@ function ProjectFolder() {
   const [resources, setResources]     = useState([]);
   const [uploading, setUploading]     = useState(false);
   const [deletingRes, setDeletingRes] = useState(null);
-  const fileInputRef  = useRef();   // for the Resources "Upload" button
-  const chatFileRef   = useRef();   // for the chat + button
+  const [loadingRes, setLoadingRes]   = useState(null); // resource id currently loading
+  const [generatingDoc, setGeneratingDoc] = useState(false);
+  const fileInputRef  = useRef();
+  const chatFileRef   = useRef();
   const textareaRef   = useRef(null);
 
   // Notes
@@ -183,22 +180,53 @@ function ProjectFolder() {
     }
   };
 
+  // Fetch resource with auth and return a blob URL
+  const fetchResourceBlob = async (resource) => {
+    const token = localStorage.getItem("tasknest_token");
+    const url   = api.getResourceUrl(folderId, resource.id);
+    const res   = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error("Failed to load file");
+    return await res.blob();
+  };
+
+  // Click on card → open in new tab (PDF/TXT/MD) or download (DOCX/CSV)
   const handleViewResource = async (resource) => {
     const ext = resource.filename.split(".").pop()?.toLowerCase();
-    const url = api.getResourceUrl(folderId, resource.id);
-    if (ext === "pdf" || ext === "txt" || ext === "md") {
-      window.open(url, "_blank");
-    } else {
-      try {
-        const token = localStorage.getItem("tasknest_token");
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-        const blob = await res.blob();
-        const objUrl = URL.createObjectURL(blob);
+    setLoadingRes(resource.id);
+    try {
+      const blob   = await fetchResourceBlob(resource);
+      const objUrl = URL.createObjectURL(blob);
+      if (ext === "pdf") {
+        window.open(objUrl, "_blank");
+        setTimeout(() => URL.revokeObjectURL(objUrl), 10000);
+      } else {
         const a = document.createElement("a");
         a.href = objUrl; a.download = resource.filename; a.click();
-        URL.revokeObjectURL(objUrl);
+        setTimeout(() => URL.revokeObjectURL(objUrl), 2000);
         showToast("📥 Downloaded!");
-      } catch (err) { showToast(err.message, "error"); }
+      }
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setLoadingRes(null);
+    }
+  };
+
+  // Download button on card → always force-download
+  const handleDownloadResource = async (e, resource) => {
+    e.stopPropagation();
+    setLoadingRes(resource.id);
+    try {
+      const blob   = await fetchResourceBlob(resource);
+      const objUrl = URL.createObjectURL(blob);
+      const a      = document.createElement("a");
+      a.href = objUrl; a.download = resource.filename; a.click();
+      setTimeout(() => URL.revokeObjectURL(objUrl), 2000);
+      showToast("📥 Downloaded!");
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setLoadingRes(null);
     }
   };
 
@@ -213,6 +241,23 @@ function ProjectFolder() {
       showToast(err.message, "error");
     } finally {
       setDeletingRes(null);
+    }
+  };
+
+  // Generate document and auto-download
+  const handleGenerateDoc = async (fmt) => {
+    setGeneratingDoc(fmt);
+    try {
+      const blob   = await api.downloadDocument(folderId, fmt);
+      const objUrl = URL.createObjectURL(blob);
+      const a      = document.createElement("a");
+      a.href = objUrl; a.download = `${folder?.name || "document"}.${fmt}`; a.click();
+      setTimeout(() => URL.revokeObjectURL(objUrl), 2000);
+      showToast(`✅ ${fmt.toUpperCase()} downloaded!`);
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setGeneratingDoc(false);
     }
   };
 
@@ -421,20 +466,38 @@ function ProjectFolder() {
             <div className="resources-section">
               <div className="section-header">
                 <h2>Resources</h2>
-                <button
-                  className="upload-btn"
-                  onClick={() => fileInputRef.current.click()}
-                  disabled={uploading}
-                >
-                  {uploading ? <><span className="btn-spinner" />Uploading...</> : "Upload"}
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  style={{ display: "none" }}
-                  accept=".pdf,.txt,.docx,.md,.csv"
-                  onChange={handleUpload}
-                />
+                <div className="resource-header-actions">
+                  <button
+                    className="gen-doc-btn"
+                    onClick={() => handleGenerateDoc("pdf")}
+                    disabled={!!generatingDoc}
+                    title="Generate PDF of this project"
+                  >
+                    {generatingDoc === "pdf" ? <><span className="btn-spinner" />...</> : "⬇ PDF"}
+                  </button>
+                  <button
+                    className="gen-doc-btn"
+                    onClick={() => handleGenerateDoc("docx")}
+                    disabled={!!generatingDoc}
+                    title="Generate DOCX of this project"
+                  >
+                    {generatingDoc === "docx" ? <><span className="btn-spinner" />...</> : "⬇ DOCX"}
+                  </button>
+                  <button
+                    className="upload-btn"
+                    onClick={() => fileInputRef.current.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? <><span className="btn-spinner" />Uploading...</> : "Upload"}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    style={{ display: "none" }}
+                    accept=".pdf,.txt,.docx,.md,.csv"
+                    onChange={handleUpload}
+                  />
+                </div>
               </div>
               {uploading && (
                 <div className="upload-progress-wrap">
@@ -449,11 +512,16 @@ function ProjectFolder() {
                 ) : resources.map((r) => (
                   <div
                     key={r.id}
-                    className={`file-card${deletingRes === r.id ? " deleting" : ""}`}
+                    className={`file-card${deletingRes === r.id ? " deleting" : ""}${loadingRes === r.id ? " loading" : ""}`}
                     style={{ background: fileBg(r.filename) }}
-                    onClick={() => handleViewResource(r)}
+                    onClick={() => loadingRes === r.id ? null : handleViewResource(r)}
                     title={`Click to open ${r.filename}`}
                   >
+                    {loadingRes === r.id && (
+                      <div className="file-card-loading-overlay">
+                        <span className="btn-spinner btn-spinner--dark" style={{ width: 22, height: 22 }} />
+                      </div>
+                    )}
                     <div className="file-card-icon">{fileIcon(r.filename)}</div>
                     <div className="file-card-info">
                       <span className="file-card-name">{r.filename}</span>
@@ -461,16 +529,24 @@ function ProjectFolder() {
                         {r.indexed ? "✓ Indexed" : "Indexing..."}
                       </span>
                     </div>
-                    <button
-                      className="resource-delete-btn"
-                      onClick={(e) => { e.stopPropagation(); handleDeleteResource(r.id); }}
-                      disabled={deletingRes === r.id}
-                      title="Delete"
-                    >
-                      {deletingRes === r.id
-                        ? <span className="btn-spinner btn-spinner--dark" style={{ width: 10, height: 10 }} />
-                        : "✕"}
-                    </button>
+                    <div className="file-card-actions">
+                      <button
+                        className="file-card-action-btn download"
+                        onClick={(e) => handleDownloadResource(e, r)}
+                        disabled={loadingRes === r.id}
+                        title="Download"
+                      >{loadingRes === r.id ? <span className="btn-spinner btn-spinner--dark" style={{ width: 10, height: 10 }} /> : "⬇"}</button>
+                      <button
+                        className="file-card-action-btn delete"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteResource(r.id); }}
+                        disabled={deletingRes === r.id || loadingRes === r.id}
+                        title="Delete"
+                      >
+                        {deletingRes === r.id
+                          ? <span className="btn-spinner btn-spinner--dark" style={{ width: 10, height: 10 }} />
+                          : "✕"}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -593,7 +669,6 @@ function ProjectFolder() {
         <div className="chatbot">
           <div className="chatbot-topbar">
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <button className="chatbot-icon-btn" onClick={toggleHistory} title="History (Ctrl+B)">☰</button>
               {folder && (
                 <span className="chatbot-folder-tag">{folder.name}</span>
               )}

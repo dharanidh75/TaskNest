@@ -9,7 +9,7 @@ import folder_b from "./assets/folder_b.png";
 import { api, isLoggedIn, getUsername, clearAuth } from "./api";
 import "./App.css";
 import "./loading.css";
-import { v4 as uuidv4 } from "uuid";
+
 
 /* ── Toast ───────────────────────────────────────────────────────────────── */
 function Toast({ message, type = "success", onDone }) {
@@ -230,9 +230,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
   const [query, setQuery]             = useState("");
   const [messages, setMessages]       = useState([{ role: "bot", text: "👋 Hi! I'm your ResHub assistant. Ask me to open a folder, add tasks, generate documents, or anything else." }]);
   const [chatLoading, setChatLoading] = useState(false);
-  const [sessionId, setSessionId]     = useState(uuidv4());
-  const [showHistory, setShowHistory] = useState(false);
-  const [sessions, setSessions]       = useState([]);
   const [pendingTask, setPendingTask] = useState(null);
 
   const chatEndRef  = useRef();
@@ -241,39 +238,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  // Ctrl+B toggle history
-  useEffect(() => {
-    const h = (e) => { if (e.ctrlKey && e.key === "b") { e.preventDefault(); toggleHistory(); } };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [showHistory]);
-
-  const toggleHistory = async () => {
-    if (!showHistory) {
-      const data = await api.getGlobalHistory().catch(() => []);
-      setSessions(data);
-    }
-    setShowHistory((p) => !p);
-  };
-
-  const newConversation = () => {
-    setSessionId(uuidv4());
-    setMessages([{ role: "bot", text: "👋 New conversation started! How can I help?" }]);
-    setPendingTask(null);
-  };
-
-  const loadSession = (session) => {
-    setSessionId(session.session_id);
-    setMessages(session.messages.map((m) => ({ role: m.role, text: m.text })));
-    setShowHistory(false);
-  };
-
-  const deleteSession = async (e, sid) => {
-    e.stopPropagation();
-    await api.deleteGlobalSession(sid).catch(() => {});
-    setSessions((p) => p.filter((s) => s.session_id !== sid));
-  };
 
   const handleFolderSelectForTask = async (opt) => {
     const folderId = opt.value;
@@ -285,7 +249,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
       await api.createTask(folderId, taskText);
       const botMsg = { role: "bot", text: `✅ Task **${taskText}** added to **${opt.label}**!` };
       setMessages((p) => [...p, botMsg]);
-      await api.saveGlobalMessage("bot", botMsg.text, "task_agent", sessionId);
     } catch (err) {
       setMessages((p) => [...p, { role: "bot", text: "❌ " + err.message }]);
     } finally { setChatLoading(false); }
@@ -304,7 +267,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
     setMessages((p) => [...p, userMsg]);
     setQuery("");
     setChatLoading(true);
-    await api.saveGlobalMessage("user", text, null, sessionId).catch(() => {});
 
     try {
       // ── Task intent ──────────────────────────────────────────────────────
@@ -326,17 +288,15 @@ function HomeChatbot({ folders, setFolders, showToast }) {
           confirmOptions: folders.map((f) => ({ label: f.name, value: f.id })),
         };
         setMessages((p) => [...p, confirmMsg]);
-        await api.saveGlobalMessage("bot", confirmMsg.text, "task_agent", sessionId).catch(() => {});
         setChatLoading(false);
         return;
       }
 
-      const res = await api.globalChat(text, sessionId);
+      const res = await api.globalChat(text);
 
       // ── Folder navigation ────────────────────────────────────────────────
       if (res.intent === "navigate_folder" && res.folder_id) {
         setMessages((p) => [...p, { role: "bot", text: res.answer }]);
-        await api.saveGlobalMessage("bot", res.answer, "navigate_folder", sessionId).catch(() => {});
         setTimeout(() => navigate(`/project_folder/${res.folder_id}`), 800);
         setChatLoading(false);
         return;
@@ -352,7 +312,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
           fmt: res.fmt,
         };
         setMessages((p) => [...p, fmtMsg]);
-        await api.saveGlobalMessage("bot", res.answer, "document_agent", sessionId).catch(() => {});
         setChatLoading(false);
         return;
       }
@@ -361,9 +320,7 @@ function HomeChatbot({ folders, setFolders, showToast }) {
         api.getFolders().then(setFolders).catch(() => {});
       }
 
-      const botMsg = { role: "bot", text: res.answer };
-      setMessages((p) => [...p, botMsg]);
-      await api.saveGlobalMessage("bot", res.answer, res.intent, sessionId).catch(() => {});
+      setMessages((p) => [...p, { role: "bot", text: res.answer }]);
     } catch (err) {
       setMessages((p) => [...p, { role: "bot", text: "⚠️ " + err.message }]);
     } finally { setChatLoading(false); }
@@ -388,36 +345,12 @@ function HomeChatbot({ folders, setFolders, showToast }) {
 
       {/* Header */}
       <div className="chatbot-topbar">
-        <button className="chatbot-icon-btn" onClick={toggleHistory} title="History (Ctrl+B)">☰</button>
         <div style={{ display: "flex", gap: 8 }}>
           <span style={{ fontWeight: 500, fontSize: 19 }}>ResHub Assistant</span>
         </div>
       </div>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-
-        {/* History sidebar */}
-        {showHistory && (
-          <div className="history-sidebar">
-            <div className="history-newchat">
-              <p className="history-label">History</p>
-              <button className="chatbot-icon-btn" onClick={newConversation} title="New conversation">✦</button>
-            </div>
-            {sessions.length === 0 && <p className="history-empty">No conversations yet.</p>}
-            {sessions.map((s) => (
-              <div key={s.session_id} className="history-item" onClick={() => loadSession(s)}>
-                <span className="history-item-text">
-                  {s.messages[0]?.text?.slice(0, 38) || "Conversation"}...
-                </span>
-                <button
-                  className="history-delete-btn"
-                  onClick={(e) => deleteSession(e, s.session_id)}
-                >✕</button>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* Messages + Input */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <div className="chat-messages">

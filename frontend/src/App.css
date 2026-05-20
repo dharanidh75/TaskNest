@@ -1,9 +1,12 @@
+/* ── Nav ──────────────────────────────────────────────────────────────────── */
 .nav {
   display: flex;
   background-color: #2b6777;
   align-items: center;
   padding: 0 30px;
   gap: 16px;
+  flex-wrap: wrap;          /* wraps on very narrow screens */
+  min-height: 56px;
 }
 
 .title {
@@ -11,13 +14,14 @@
   font-family: Arial, Helvetica, sans-serif;
   font-size: 30px;
   cursor: pointer;
-  margin-right: auto;
+  margin-right: auto;       /* pushes everything else to the right */
 }
 
+/* was: margin-left: 1100px — broke on every screen ≠ 1440px */
 .nav-username {
   color: #d0e8f0;
   font-size: 14px;
-  margin-left: 1100px; 
+  margin-left: auto;        /* flex auto-margin keeps it right-aligned */
 }
 
 .logout-btn {
@@ -39,29 +43,46 @@
   width: 70px;
 }
 
+/* ── Home layout ──────────────────────────────────────────────────────────── */
+.app {
+  background-color: #c8d8e4;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .main-content {
   display: flex;
   background-color: #c8d8e4;
-  min-height: 86vh;
+  flex: 1;
   padding: 20px;
   gap: 20px;
+  min-height: 86vh;
+  /* stack vertically on tablet/small laptop */
+  flex-wrap: wrap;
 }
 
 .folders {
   flex: 2;
+  min-width: 280px;         /* never collapses smaller than this */
   padding: 20px;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .chatbot {
   flex: 1;
+  min-width: 280px;
   background-color: #f2f2f2;
   position: relative;
   border-radius: 15px;
   display: flex;
   flex-direction: column;
+  min-height: 500px;
 }
 
+/* ── Chat internals ───────────────────────────────────────────────────────── */
 .chatbot-inner {
   display: flex;
   flex-direction: column;
@@ -100,24 +121,22 @@
   align-self: flex-start;
 }
 
+/* ── input_box (legacy – kept but de-absolute'd) ──────────────────────────── */
 .input_box {
   border-radius: 10px;
-  position: absolute;
-  left: auto;
-  top: auto;
-  right: 50px;
-  bottom: 50px;
   border-width: 1px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+/* ── NEW folder button — was: position:absolute; left:790px ──────────────── */
 .new_task_box {
   cursor: pointer;
   font-size: 17px;
-  position: absolute;
-  left: 790px;
-  top: auto;
-  right: auto;
-  bottom: 100px;
+  /* replace pixel-absolute with flex-based positioning */
+  align-self: flex-end;     /* sits at the right edge of the .folders flex column */
+  margin-top: auto;         /* pushes to the bottom of the column */
+  margin-right: 0;
   border-radius: 10px;
   border-width: 0px;
   background-color: #2b6777;
@@ -138,6 +157,7 @@
   align-items: center;
 }
 
+/* ── Generic input reset ──────────────────────────────────────────────────── */
 input {
   padding-left: 10px;
   padding-right: 10px;
@@ -146,6 +166,7 @@ input {
   box-sizing: border-box;
 }
 
+/* ── Folder grid ──────────────────────────────────────────────────────────── */
 .folder_icon_b {
   height: 80px;
   width: 80px;
@@ -155,25 +176,35 @@ input {
   transform: translateY(-5px);
 }
 
+/* ── Searchbar row — was: search_bar with absolute position ──────────────── */
 .searchbar {
   display: flex;
-  gap: 50px;
-  padding-bottom: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 20px;
   padding-top: 10px;
+  flex-wrap: wrap;
 }
 
+/* was: position:absolute; right:230px; top:123px; width:500px */
 .search_bar {
   border-radius: 10px;
-  position: absolute;
-  left: auto;
-  right: 230px;
-  top: 123px;
-  width: 500px;
+  flex: 1;
+  min-width: 160px;
+  max-width: 500px;
+  height: 40px;
+  padding: 0 12px;
+  font-size: 15px;
+  box-sizing: border-box;
 }
 
+/* was: position:absolute — just a heading now */
 .folder_header {
-  position: absolute;
-  padding-bottom: 40px;
+  font-size: 30px;
+  font-weight: bold;
+  white-space: nowrap;
+  margin: 0;
 }
 
 .folder_rack {
@@ -181,11 +212,11 @@ input {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  margin-top: 16px;         /* replaced the old top:100px on children */
 }
 
 .folder_item_wrapper {
   position: relative;
-  top: 100px;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -230,6 +261,7 @@ input {
   color: inherit;
 }
 
+/* ── Chat input row ───────────────────────────────────────────────────────── */
 .chat_input_container {
   display: flex;
   width: calc(100% - 40px);
@@ -238,12 +270,16 @@ input {
 
 .query_box {
   flex: 1;
-  height: 42px;
   border-radius: 12px 0 0 12px;
   border: 1px solid #ccc;
   padding-left: 15px;
   font-size: 15px;
   outline: none;
+  resize: none;
+  min-height: 42px;
+  max-height: 140px;
+  box-sizing: border-box;
+  line-height: 1.5;
 }
 
 .send_btnf {
@@ -263,18 +299,16 @@ input {
   transition: background 0.15s, opacity 0.15s;
 }
 
-.send_btn:hover {
+.send_btnf:hover {
   background: #1f4f5c;
 }
 
-.send_btn:disabled {
+.send_btnf:disabled {
   background: #ccc;
   cursor: not-allowed;
 }
 
-/* ── Add these rules to the END of your App.css ───────────────────────────── */
-
-/* Modal backdrop */
+/* ── Modal ────────────────────────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -386,7 +420,7 @@ input {
 .modal-confirm:hover:not(:disabled) { background: #1f4f5c; }
 .modal-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* Deleting fade */
+/* ── State helpers ────────────────────────────────────────────────────────── */
 .folder_item_wrapper.deleting,
 .resource-item.deleting {
   opacity: 0.4;
@@ -394,12 +428,94 @@ input {
   transition: opacity 0.3s;
 }
 
-/* Task toggling */
 .task-item.toggling {
   opacity: 0.6;
   transition: opacity 0.2s;
 }
-.history-newchat{
+
+/* ── History sidebar ──────────────────────────────────────────────────────── */
+.history-newchat {
   display: flex;
-  gap: 100px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+}
+
+/* ── Responsive breakpoints ───────────────────────────────────────────────── */
+
+/* Tablet / small laptop  (≤ 1024px) */
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .folders {
+    flex: 1 1 100%;       /* full width, stack above chatbot */
+    min-width: unset;
+  }
+
+  .chatbot {
+    flex: 1 1 100%;
+    min-width: unset;
+    min-height: 420px;
+  }
+
+  .search_bar {
+    max-width: 100%;
+  }
+}
+
+/* Small laptop / large tablet (≤ 900px) */
+@media (max-width: 900px) {
+  .title {
+    font-size: 22px;
+  }
+
+  .profile_logo {
+    height: 50px;
+    width: 50px;
+  }
+}
+
+/* Mobile (≤ 600px) */
+@media (max-width: 600px) {
+  .nav {
+    padding: 0 14px;
+    gap: 10px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .main-content {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .folders,
+  .chatbot {
+    flex: 1 1 100%;
+    padding: 10px;
+  }
+
+  .folder_icon_b {
+    height: 60px;
+    width: 60px;
+  }
+
+  .chat-messages {
+    max-height: 360px;
+  }
+
+  .new_task_box {
+    width: 80px;
+    height: 38px;
+    font-size: 14px;
+  }
+
+  .modal-box {
+    width: 96vw;
+  }
 }

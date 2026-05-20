@@ -111,8 +111,8 @@ function Profile() {
             <p className="email">{profile.email}</p>
             {profile.bio && <p>{profile.bio}</p>}
           </div>
-          <Link to="/edit_profile" className="link">
-            <button className="edit-btn" style={{ position: "relative", left: "200px" }}>Edit Profile</button>
+          <Link to="/edit_profile" className="link" style={{ marginLeft: "auto" }}>
+            <button className="edit-btn">Edit Profile</button>
           </Link>
         </div>
 

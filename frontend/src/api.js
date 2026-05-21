@@ -1,9 +1,20 @@
+/**
+ * api.js — UPGRADED
+ * =================
+ * Changes from original:
+ *   - getOrCreateSessionId(): persists session_id per scope in sessionStorage
+ *     (tab-scoped, survives page refreshes, new session on new tab = clean context)
+ *   - api.chat() and api.globalChat() now auto-inject the correct session_id
+ *     — callers no longer need to pass sessionId manually (backward-compatible)
+ *   - All other code is unchanged
+ */
+
 const BASE = "http://localhost:8000";
 
 const PUBLIC_PATHS = ["/auth/register", "/auth/login"];
 
-function getToken() { return localStorage.getItem("tasknest_token"); }
-function getTokenExpiry() { return localStorage.getItem("tasknest_token_expiry"); }
+function getToken() { return localStorage.getItem("reshub_token"); }
+function getTokenExpiry() { return localStorage.getItem("reshub_token_expiry"); }
 function isTokenExpired() {
   const expiry = getTokenExpiry();
   return !expiry || Date.now() > parseInt(expiry, 10);
@@ -11,18 +22,18 @@ function isTokenExpired() {
 
 export function saveAuth(token, username, userId) {
   const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  localStorage.setItem("tasknest_token", token);
-  localStorage.setItem("tasknest_user", username);
-  localStorage.setItem("tasknest_uid", userId);
-  localStorage.setItem("tasknest_token_expiry", String(expiry));
+  localStorage.setItem("reshub_token", token);
+  localStorage.setItem("reshub_user", username);
+  localStorage.setItem("reshub_uid", userId);
+  localStorage.setItem("reshub_token_expiry", String(expiry));
 }
 
 export function clearAuth() {
-  ["tasknest_token", "tasknest_user", "tasknest_uid", "tasknest_token_expiry"]
+  ["reshub_token", "reshub_user", "reshub_uid", "reshub_token_expiry"]
     .forEach((k) => localStorage.removeItem(k));
 }
 
-export function getUsername() { return localStorage.getItem("tasknest_user"); }
+export function getUsername() { return localStorage.getItem("reshub_user"); }
 
 export function isLoggedIn() {
   const token = getToken();
@@ -67,6 +78,25 @@ async function requestBlob(path, method = "GET") {
   return res.blob();
 }
 
+// ── Session ID management (Principle 4) ──────────────────────────────────────
+// sessionStorage is tab-scoped and survives page refreshes within the same tab.
+// A new tab starts a fresh session (clean conversation context).
+// Key format: "reshub_session_folder_<id>" or "reshub_session_global"
+
+function getOrCreateSessionId(scopeKey) {
+  const storageKey = `reshub_session_${scopeKey}`;
+  let id = sessionStorage.getItem(storageKey);
+  if (!id) {
+    id = typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    sessionStorage.setItem(storageKey, id);
+  }
+  return id;
+}
+
+// ── API surface (unchanged except chat methods) ───────────────────────────────
+
 export const api = {
   // Auth
   register: (username, email, password) =>
@@ -108,35 +138,41 @@ export const api = {
   getResourceUrl: (folderId, resourceId) => `${BASE}/folders/${folderId}/resources/${resourceId}/serve/`,
 
   // Notes
-  getNotes:   (folderId)                        => request("GET", `/folders/${folderId}/notes/`),
-  createNote: (folderId, title, content)        => request("POST", `/folders/${folderId}/notes/`, { title, content }),
-  updateNote: (folderId, noteId, title, content)=> request("PUT", `/folders/${folderId}/notes/${noteId}`, { title, content }),
-  deleteNote: (folderId, noteId)                => request("DELETE", `/folders/${folderId}/notes/${noteId}`),
+  getNotes:   (folderId)                         => request("GET", `/folders/${folderId}/notes/`),
+  createNote: (folderId, title, content)         => request("POST", `/folders/${folderId}/notes/`, { title, content }),
+  updateNote: (folderId, noteId, title, content) => request("PUT", `/folders/${folderId}/notes/${noteId}`, { title, content }),
+  deleteNote: (folderId, noteId)                 => request("DELETE", `/folders/${folderId}/notes/${noteId}`),
 
   // Tasks
-  getTasks:    (folderId)                => request("GET", `/folders/${folderId}/tasks/`),
-  createTask:  (folderId, text, deadline)=> request("POST", `/folders/${folderId}/tasks/`, { text, deadline }),
-  updateTask:  (folderId, taskId, data)  => request("PUT", `/folders/${folderId}/tasks/${taskId}`, data),
-  deleteTask:  (folderId, taskId)        => request("DELETE", `/folders/${folderId}/tasks/${taskId}`),
+  getTasks:   (folderId)                 => request("GET", `/folders/${folderId}/tasks/`),
+  createTask: (folderId, text, deadline) => request("POST", `/folders/${folderId}/tasks/`, { text, deadline }),
+  updateTask: (folderId, taskId, data)   => request("PUT", `/folders/${folderId}/tasks/${taskId}`, data),
+  deleteTask: (folderId, taskId)         => request("DELETE", `/folders/${folderId}/tasks/${taskId}`),
 
-  // Chat
-  chat:       (folderId, message, sessionId) =>
-    request("POST", `/folders/${folderId}/chat/`, { message, session_id: sessionId }),
+  // Chat — session_id auto-injected from sessionStorage (Principle 4)
+  chat: (folderId, message, sessionId) =>
+    request("POST", `/folders/${folderId}/chat/`, {
+      message,
+      session_id: sessionId || getOrCreateSessionId(`folder_${folderId}`),
+    }),
   globalChat: (message, sessionId) =>
-    request("POST", "/chat/global/", { message, session_id: sessionId }),
+    request("POST", "/chat/global/", {
+      message,
+      session_id: sessionId || getOrCreateSessionId("global"),
+    }),
 
   // History — folder
-  getFolderHistory:   (folderId)                                   => request("GET", `/folders/${folderId}/history/`),
-  saveFolderMessage:  (folderId, role, text, intent, sources, sid) =>
+  getFolderHistory:    (folderId)                                    => request("GET", `/folders/${folderId}/history/`),
+  saveFolderMessage:   (folderId, role, text, intent, sources, sid) =>
     request("POST", `/folders/${folderId}/history/`, { role, text, intent, sources, session_id: sid }),
-  deleteFolderSession:(folderId, sessionId)                        =>
+  deleteFolderSession: (folderId, sessionId)                         =>
     request("DELETE", `/folders/${folderId}/history/${sessionId}`),
 
   // History — global
-  getGlobalHistory:    ()                                          => request("GET", "/history/global/"),
-  saveGlobalMessage:   (role, text, intent, sid)                   =>
+  getGlobalHistory:    ()                             => request("GET", "/history/global/"),
+  saveGlobalMessage:   (role, text, intent, sid)      =>
     request("POST", "/history/global/", { role, text, intent, session_id: sid }),
-  deleteGlobalSession: (sessionId)                                 =>
+  deleteGlobalSession: (sessionId)                    =>
     request("DELETE", `/history/global/${sessionId}`),
 
   // Document generation — triggers download

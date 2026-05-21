@@ -28,5 +28,7 @@ dependencies = [
     "sentence-transformers==3.0.1",
     "sqlalchemy==2.0.30",
     "uvicorn==0.34.3",
-    "reportlab==4.1.0",
+    "reportlab==4.5.1",
+    "redis>=7.4.0",
+    "duckduckgo-search>=8.1.1",
 ]

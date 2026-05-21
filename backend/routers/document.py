@@ -6,7 +6,6 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from database import get_db, Folder, Note, Resource
 from auth import get_current_user, User
-from rag.chroma_store import query_documents
 
 router = APIRouter(tags=["document"])
 
@@ -122,36 +121,69 @@ def generate_document(
 
     notes = db.query(Note).filter(Note.folder_id == folder_id).all()
 
-    # Use RAG to generate a full project summary
-    from langchain_groq import ChatGroq
-    from langchain_core.messages import SystemMessage, HumanMessage
+    # 1. Try to use an existing generated summary (most recent)
+    summary_notes = [n for n in notes if n.title.startswith("Summary —")]
+    if summary_notes:
+        # Use the most recent summary that was already generated
+        summary_notes.sort(key=lambda n: n.title, reverse=True)
+        rag_summary = summary_notes[0].content
+        print(f"[Document Gen] Using existing summary from {summary_notes[0].title}")
+    else:
+        # No existing summary — generate one using the same logic as the chatbot
+        from langchain_groq import ChatGroq
+        from langchain_core.messages import SystemMessage, HumanMessage
 
-    llm = ChatGroq(
-        groq_api_key=os.getenv("GROQ_API_KEY"),
-        model_name="llama-3.1-8b-instant",
-        temperature=0.2,
-    )
+        llm = ChatGroq(
+            groq_api_key=os.getenv("GROQ_API_KEY"),
+            model_name="llama-3.1-8b-instant",
+            temperature=0.2,
+        )
 
-    # Pull relevant chunks from ChromaDB
-    chunks = query_documents(folder_id, "project overview summary goals features", n_results=8)
-    context = "\n\n".join(chunks) if chunks else "No uploaded resources found."
+        resources = db.query(Resource).filter(Resource.folder_id == folder_id).all()
 
-    notes_text = "\n".join([f"- {n.title}: {(n.content or '')[:300]}" for n in notes])
+        # Retrieve ALL chunks from ChromaDB
+        from rag.chroma_store import get_collection
+        try:
+            collection = get_collection(folder_id)
+            chroma_data = collection.get()
+            all_chunks = chroma_data.get("documents", []) if chroma_data else []
+            print(f"[Document Gen] Retrieved {len(all_chunks)} chunks for folder {folder_id}")
+        except Exception as e:
+            print(f"[Document Gen] ChromaDB retrieval failed: {e}")
+            all_chunks = []
 
-    prompt = (
-        f"You are writing a professional project documentation for '{folder.name}'.\n"
-        f"Use the following uploaded resource content and notes to write a comprehensive summary.\n\n"
-        f"RESOURCE CONTENT:\n{context}\n\n"
-        f"NOTES:\n{notes_text or 'No notes.'}\n\n"
-        "Write a detailed, structured project summary covering: purpose, key features, technical details, "
-        "current status, and any important findings from the resources. Be thorough and professional."
-    )
+        file_list = ", ".join([r.filename for r in resources]) if resources else "(no files)"
+        indexed_count = sum(1 for r in resources if r.indexed) if resources else 0
+        context = "\n\n".join(all_chunks[:20]) if all_chunks else "[No indexed resource content available]"
 
-    response = llm.invoke([
-        SystemMessage(content="You are a professional technical writer."),
-        HumanMessage(content=prompt),
-    ])
-    rag_summary = response.content
+        notes_text = "\n".join([f"- {n.title}: {(n.content or '')[:300]}" for n in notes if not n.title.startswith("Summary —")])
+
+        prompt = (
+            f"You are a professional technical writer creating comprehensive project documentation for ResHub.\n"
+            f"Project: '{folder.name}'\n"
+            f"Files uploaded: {file_list}\n"
+            f"Indexed: {indexed_count}/{len(resources)}\n\n"
+            f"RESOURCE CONTENT FROM UPLOADED FILES:\n"
+            f"--- START RESOURCES ---\n{context}\n--- END RESOURCES ---\n\n"
+            f"PROJECT NOTES:\n{notes_text or '(None)'}\n\n"
+            "TASK: Write a detailed, structured project summary covering:\n"
+            "• Purpose and objectives\n"
+            "• Key features and functionality\n"
+            "• Technical details and architecture\n"
+            "• Current status and progress\n"
+            "• Important findings from resources\n\n"
+            "STRICT RULES:\n"
+            "- Only use information from the provided resource blocks.\n"
+            "- If resources are missing, explicitly state that.\n"
+            "- Do NOT generate default content about other projects.\n"
+            "- Be thorough and professional."
+        )
+
+        response = llm.invoke([
+            SystemMessage(content="You are a ResHub professional technical writer. Only synthesize from provided resources. Do not generate fabricated content."),
+            HumanMessage(content=prompt),
+        ])
+        rag_summary = response.content
 
     safe_name = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in folder.name)
 

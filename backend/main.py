@@ -4,7 +4,7 @@ from database import create_tables
 from routers import auth_router, folders, resources, notes, tasks, chat
 from routers import document
 
-app = FastAPI(title="DevNest API", version="2.0.0")
+app = FastAPI(title="ResHub API", version="3.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,21 +20,31 @@ async def startup():
     create_tables()
     print("✅ DB tables ready")
 
-    # Migrate: add bio column to users table if it doesn't exist yet
-    # Safe to run on every startup — ALTER TABLE is a no-op if column exists
-    # on PostgreSQL this needs a try/except; on SQLite it raises OperationalError
+    # Safe migration: add bio column if missing
     try:
         from database import engine
         with engine.connect() as conn:
             conn.execute(
-                __import__("sqlalchemy").text(
-                    "ALTER TABLE users ADD COLUMN bio TEXT"
-                )
+                __import__("sqlalchemy").text("ALTER TABLE users ADD COLUMN bio TEXT")
             )
             conn.commit()
         print("✅ Migrated: users.bio column added")
     except Exception:
-        pass  # Column already exists — nothing to do
+        pass
+
+    # Verify Redis connection
+    try:
+        import redis as _redis
+        import os
+        r = _redis.Redis(
+            host=os.getenv("REDIS_HOST", "localhost"),
+            port=int(os.getenv("REDIS_PORT", 6379)),
+            db=0,
+        )
+        r.ping()
+        print("✅ Redis connected")
+    except Exception as e:
+        print(f"⚠️  Redis not reachable: {e} — session persistence disabled until Redis is up")
 
     print("⏳ Loading embedding model...")
     from rag.chroma_store import _embedding_fn
@@ -47,10 +57,10 @@ async def startup():
     print("✅ ChromaDB ready")
 
     print("⏳ Compiling agent graph...")
-    from agents.graph import agent_graph  # noqa
+    from agents.graph import agent_graph  # noqa — triggers build_graph() via lru_cache
     print("✅ Agent graph ready")
 
-    print("🚀 DevNest API fully warmed up!")
+    print("🚀 ResHub API fully warmed up!")
 
 
 app.include_router(auth_router.router)
@@ -64,4 +74,4 @@ app.include_router(document.router)
 
 @app.get("/")
 def root():
-    return {"message": "DevNest API running 🚀"}
+    return {"message": "ResHub API running 🚀"}

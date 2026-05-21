@@ -355,82 +355,76 @@ function ProjectFolder() {
   };
 
   const sendMessage = async () => {
-    const text = query.trim();
-    if (!text || chatLoading) return;
+  const text = query.trim();
+  if (!text || chatLoading) return;
 
-    // Reset textarea height
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
+  if (textareaRef.current) {
+    textareaRef.current.style.height = "auto";
+  }
 
-    setMessages((p) => [...p, { role: "user", text }]);
-    setQuery("");
-    setChatLoading(true);
-    await api.saveFolderMessage(folderId, "user", text, null, 0, sessionId).catch(() => {});
+  setMessages((p) => [...p, { role: "user", text }]);
+  setQuery("");
+  setChatLoading(true);
 
-    try {
-      // ── Folder navigation ────────────────────────────────────────────────
-      const navKw = ["open", "go to", "navigate to", "switch to", "take me to"];
-      const msgLower = text.toLowerCase();
+  try {
+    const navKw = ["open", "go to", "navigate to", "switch to", "take me to"];
+    const msgLower = text.toLowerCase();
 
-      if (navKw.some((k) => msgLower.includes(k))) {
-        const matched = allFolders.find(
-          (f) => f.id !== parseInt(folderId) &&
-            f.name.toLowerCase() === msgLower
-              .replace(/open|go to|navigate to|switch to|take me to/gi, "").trim()
-        );
-        if (matched) {
-          const botMsg = { role: "bot", text: `📁 Navigating to **${matched.name}**...` };
-          setMessages((p) => [...p, botMsg]);
-          await api.saveFolderMessage(folderId, "bot", botMsg.text, "navigate_folder", 0, sessionId).catch(() => {});
-          setTimeout(() => navigate(`/project_folder/${matched.id}`), 700);
-          setChatLoading(false);
-          return;
-        } else if (navKw.some((k) => msgLower.includes(k))) {
-          const otherFolders = allFolders.filter((f) => f.id !== parseInt(folderId));
-          if (otherFolders.length > 0) {
-            const list = otherFolders.map((f) => `• ${f.name}`).join("\n");
-            const botMsg = { role: "bot", text: `❌ No folder found with that name. Your other projects:\n\n${list}` };
-            setMessages((p) => [...p, botMsg]);
-            await api.saveFolderMessage(folderId, "bot", botMsg.text, "navigate_not_found", 0, sessionId).catch(() => {});
-            setChatLoading(false);
-            return;
-          }
-        }
-      }
-
-      const res = await api.chat(folderId, text, sessionId);
-
-      if (res.summary_saved) {
-        api.getNotes(folderId).then(setNotes).catch(console.error);
-      }
-
-      if (res.intent === "document_agent" && res.doc_pending) {
-        const botMsg = {
-          role: "bot",
-          text: res.answer,
-          isDocConfirm: true,
-          folderId: res.folder_id || parseInt(folderId),
-          fmt: res.fmt,
-        };
+    if (navKw.some((k) => msgLower.includes(k))) {
+      const matched = allFolders.find(
+        (f) => f.id !== parseInt(folderId) &&
+          f.name.toLowerCase() === msgLower
+            .replace(/open|go to|navigate to|switch to|take me to/gi, "").trim()
+      );
+      if (matched) {
+        const botMsg = { role: "bot", text: `📁 Navigating to **${matched.name}**...` };
         setMessages((p) => [...p, botMsg]);
-        await api.saveFolderMessage(folderId, "bot", res.answer, "document_agent", 0, sessionId).catch(() => {});
+        setTimeout(() => navigate(`/project_folder/${matched.id}`), 700);
         setChatLoading(false);
         return;
+      } else if (navKw.some((k) => msgLower.includes(k))) {
+        const otherFolders = allFolders.filter((f) => f.id !== parseInt(folderId));
+        if (otherFolders.length > 0) {
+          const list = otherFolders.map((f) => `• ${f.name}`).join("\n");
+          const botMsg = { role: "bot", text: `❌ No folder found with that name. Your other projects:\n\n${list}` };
+          setMessages((p) => [...p, botMsg]);
+          setChatLoading(false);
+          return;
+        }
       }
-
-      if (res.intent === "task_agent") api.getTasks(folderId).then(setTasks).catch(console.error);
-      if (res.intent === "notes_agent") api.getNotes(folderId).then(setNotes).catch(console.error);
-
-      const botMsg = { role: "bot", text: res.answer, showCopy: true };
-      setMessages((p) => [...p, botMsg]);
-      await api.saveFolderMessage(folderId, "bot", res.answer, res.intent, res.sources_used || 0, sessionId).catch(() => {});
-    } catch (err) {
-      setMessages((p) => [...p, { role: "bot", text: "⚠️ " + err.message }]);
-    } finally {
-      setChatLoading(false);
     }
-  };
+
+    const res = await api.chat(folderId, text, sessionId);
+
+    if (res.summary_saved) {
+      api.getNotes(folderId).then(setNotes).catch(console.error);
+    }
+
+    if (res.intent === "document_agent" && res.doc_pending) {
+      const botMsg = {
+        role: "bot",
+        text: res.answer,
+        isDocConfirm: true,
+        folderId: res.folder_id || parseInt(folderId),
+        fmt: res.fmt,
+      };
+      setMessages((p) => [...p, botMsg]);
+      setChatLoading(false);
+      return;
+    }
+
+    if (res.intent === "task_agent") api.getTasks(folderId).then(setTasks).catch(console.error);
+    if (res.intent === "notes_agent") api.getNotes(folderId).then(setNotes).catch(console.error);
+
+    const botMsg = { role: "bot", text: res.answer, showCopy: true };
+    setMessages((p) => [...p, botMsg]);
+
+  } catch (err) {
+    setMessages((p) => [...p, { role: "bot", text: "⚠️ " + err.message }]);
+  } finally {
+    setChatLoading(false);
+  }
+};
 
   return (
     <div className="app">

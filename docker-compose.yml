@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: reshub-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/app/chroma_data
+      - uploads:/app/uploads
+    env_file:
+      - ./backend/.env
+    networks:
+      - reshub-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: reshub-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - reshub-network
+    restart: unless-stopped
+
+volumes:
+  chroma_data:
+    driver: local
+  uploads:
+    driver: local
+
+networks:
+  reshub-network:
+    driver: bridge

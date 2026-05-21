@@ -1,7 +1,6 @@
-# Ignore all actual environment files
-.env
-.env.*
-.env.local
-
-# Do NOT ignore the example file (unless it accidentally contains a real key)
-# !.env.example
+\echo "backend/chroma_data/
+backend/uploads/
+**/.env
+**/node_modules/
+**/__pycache__/
+**/dist/" >> .gitignore

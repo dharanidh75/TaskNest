@@ -1,32 +1,55 @@
-FROM python:3.12-slim
+# ─── Stage 1: Builder ─────────────────────────────────────────────────────────
+FROM python:3.12-slim AS builder
 
-WORKDIR /app
+WORKDIR /build
 
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    libmagic1 \
-    build-essential \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc g++ build-essential libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip uninstall -y nvidia-cublas-cu12 nvidia-cuda-cupti-cu12 \
-        nvidia-cuda-nvrtc-cu12 nvidia-cuda-runtime-cu12 \
-        nvidia-cudnn-cu12 nvidia-cufft-cu12 nvidia-curand-cu12 \
-        nvidia-cusolver-cu12 nvidia-cusparse-cu12 nvidia-nccl-cu12 \
-        nvidia-nvjitlink-cu12 nvidia-nvtx-cu12 triton 2>/dev/null || true && \
-    apt-get purge -y --auto-remove gcc g++ build-essential && \
-    rm -rf /root/.cache/pip /tmp/*
+# 1. Install CPU-only torch FIRST — this pins it before sentence-transformers
+#    can pull in the 2.5GB CUDA variant
+RUN pip install --no-cache-dir \
+    "torch==2.1.2+cpu" \
+    "torchvision==0.16.2+cpu" \
+    --extra-index-url https://download.pytorch.org/whl/cpu
 
+# 2. Install everything else — torch is already satisfied (CPU), won't be upgraded
+RUN pip install --no-cache-dir -r requirements.txt \
+    --extra-index-url https://download.pytorch.org/whl/cpu
+
+# ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
+FROM python:3.12-slim AS runtime
+
+WORKDIR /app
+
+# Only what's needed at runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libmagic1 libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder (skip the build tools)
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy app source (dockerignore keeps chroma_data/uploads/pycache out)
 COPY . .
 
-RUN mkdir -p chroma_data uploads models
+# Persistent storage dirs — Railway volume mounts here
+RUN mkdir -p /data/chroma /data/uploads
 
-ENV SENTENCE_TRANSFORMERS_HOME=/app/models
+# Sentence-transformers cache lives on the volume too (avoids re-download on restart)
+ENV SENTENCE_TRANSFORMERS_HOME=/data/models
+ENV CHROMA_PATH=/data/chroma
+ENV UPLOADS_DIR=/data/uploads
+
+# Non-root user
+RUN adduser --disabled-password --gecos "" appuser \
+    && chown -R appuser:appuser /app /data
+USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

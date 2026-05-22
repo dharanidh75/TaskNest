@@ -1,27 +1,27 @@
-# Stage 1: Build the React app
+# ─── Stage 1: Build React app ─────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files and install dependencies
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --prefer-offline
 
-# Copy source code and build
 COPY . .
+
+# VITE_API_URL is injected at build time by Railway
+# Set it in Railway's frontend service env vars:
+#   VITE_API_URL=https://reshub-backend-production.up.railway.app
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 RUN npm run build
 
-# Stage 2: Serve with Nginx
-FROM nginx:alpine
+# ─── Stage 2: Serve with Nginx ────────────────────────────────────────────────
+FROM nginx:1.27-alpine AS runtime
 
-# Copy built files to nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]

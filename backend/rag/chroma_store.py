@@ -5,16 +5,29 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Absolute path — works regardless of which directory uvicorn is launched from
-_DEFAULT_CHROMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "chroma_data")
-CHROMA_PATH = os.path.abspath(os.getenv("CHROMA_PATH", _DEFAULT_CHROMA))
-
-# Sentence-transformers for local embeddings (no API cost, no key needed)
 _embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
     model_name="all-MiniLM-L6-v2"
 )
 
-_client = chromadb.PersistentClient(path=CHROMA_PATH)
+# Use Chroma Cloud if credentials are set, else fall back to local (for dev on JARVIS)
+_CHROMA_API_KEY  = os.getenv("CHROMA_API_KEY")
+_CHROMA_TENANT   = os.getenv("CHROMA_TENANT")
+_CHROMA_DATABASE = os.getenv("CHROMA_DATABASE")
+
+if _CHROMA_API_KEY:
+    _client = chromadb.HttpClient(
+        ssl=True,
+        host="api.trychroma.com",
+        tenant=_CHROMA_TENANT,
+        database=_CHROMA_DATABASE,
+        headers={"x-chroma-token": _CHROMA_API_KEY},
+    )
+    print("[ChromaDB] Using Chroma Cloud")
+else:
+    _DEFAULT_CHROMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "chroma_data")
+    CHROMA_PATH = os.path.abspath(os.getenv("CHROMA_PATH", _DEFAULT_CHROMA))
+    _client = chromadb.PersistentClient(path=CHROMA_PATH)
+    print(f"[ChromaDB] Using local persistent store at {CHROMA_PATH}")
 
 
 def _collection_name(folder_id: int) -> str:
@@ -56,7 +69,6 @@ def add_documents(folder_id: int, docs: list[str], metadatas: list[dict], ids: l
 def query_documents(folder_id: int, query: str, n_results: int = 5) -> list[str]:
     """
     Retrieve top-k relevant chunks from a folder's collection.
-
     Uses query_embeddings (raw vectors) instead of query_texts so this works
     for ALL collection types — both new (embedding config stored) and legacy
     (no config). Embedding manually with _embedding_fn bypasses ChromaDB's
@@ -70,7 +82,6 @@ def query_documents(folder_id: int, query: str, n_results: int = 5) -> list[str]
         if count == 0:
             return []
 
-        # Embed the query ourselves — works for every collection type
         query_embedding = _embedding_fn([query])[0]
 
         results = collection.query(

@@ -9,12 +9,12 @@ app = FastAPI(title="ResHub API", version="3.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-     allow_origins=[
-        "http://localhost:3000",      # React default
-        "http://localhost:5174",      # Vite default
-        "http://localhost:4173",      # Vite preview
-        "reshub-seven.vercel.app"
-        "https://reshub-seven.vercel.app"# your Render frontend URL
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "https://reshub-git-main-code-x3.vercel.app",
+        "https://reshub-6gif1888r-code-x3.vercel.app",
+        "https://reshub-seven.vercel.app",  # keep old one too just in case
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -60,16 +60,12 @@ async def startup():
     # Verify Redis connection
     try:
         import redis as _redis
-        import os
-        r = _redis.Redis(
-            host=os.getenv("REDIS_HOST", "localhost"),
-            port=int(os.getenv("REDIS_PORT", 6379)),
-            db=0,
-        )
+        REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+        r = _redis.from_url(REDIS_URL)
         r.ping()
         print("✅ Redis connected")
     except Exception as e:
-        print(f"⚠️  Redis not reachable: {e} — session persistence disabled until Redis is up")
+        print(f"⚠️  Redis not reachable: {e}")
 
     print("⏳ Loading embedding model...")
     from rag.chroma_store import _embedding_fn

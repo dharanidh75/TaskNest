@@ -316,7 +316,7 @@ function HomeChatbot({ folders, setFolders, showToast }) {
         return;
       }
 
-      if (res.intent === "folder_agent") {
+      if (res.intent === "folder_agent" || res.intent === "tool_call") {
         api.getFolders().then(setFolders).catch(() => {});
       }
 

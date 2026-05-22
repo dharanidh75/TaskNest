@@ -12,6 +12,7 @@ app.add_middleware(
     allow_origins=[
         "https://reshub-git-main-code-x3.vercel.app",
         "https://reshub-6gif1888r-code-x3.vercel.app",
+        "https://reshub-2q2wlxptp-code-x3.vercel.app/",  # keep old one too just in case
         "https://reshub-seven.vercel.app",  # keep old one too just in case
         "http://localhost:5173",
         "http://localhost:5174",
@@ -21,6 +22,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/ping")
+def ping():
+    return {"status": "alive"}
 
 @app.on_event("startup")
 async def startup():
@@ -33,9 +38,11 @@ async def startup():
         with engine.connect() as conn:
             # Existing bio migration
             try:
-                conn.execute(__import__("sqlalchemy").text("ALTER TABLE users ADD COLUMN bio TEXT"))
+                conn.execute(__import__("sqlalchemy").text(
+                    "ALTER TABLE chat_history MODIFY COLUMN folder_id INT NULL"
+                ))
                 conn.commit()
-                print("✅ Migrated: users.bio column added")
+                print("✅ Migrated: chat_history.folder_id nullable")
             except Exception:
                 pass
 

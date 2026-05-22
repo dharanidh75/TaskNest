@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Route, Routes, Link, useNavigate } from "react-router-dom";
+import { Route, Routes, Link, useNavigate, Navigate } from "react-router-dom";
 import Profile from "./profile";
 import ProjectFolder from "./project_folder";
 import EditProfile from "./edit_profile";
@@ -9,7 +9,6 @@ import folder_b from "./assets/folder_b.png";
 import { api, isLoggedIn, getUsername, clearAuth } from "./api";
 import "./App.css";
 import "./loading.css";
-
 
 /* ── Toast ───────────────────────────────────────────────────────────────── */
 function Toast({ message, type = "success", onDone }) {
@@ -60,23 +59,35 @@ export function ConfirmBox({ question, options, onSelect, onCancel }) {
   );
 }
 
+/* ── Protected & Public Route Guards ──────────────────────────────────────── */
+
+// FIXED: Clean redirect route guard. Evaluates status synchronously during render.
+function ProtectedRoute({ children }) {
+  return isLoggedIn() ? children : <Navigate to="/auth" replace />;
+}
+
+// OPTIONAL OPTIMIZATION: If already logged in, bounce them away from /auth straight to home
+function PublicRoute({ children }) {
+  return !isLoggedIn() ? children : <Navigate to="/" replace />;
+}
+
 /* ── App ──────────────────────────────────────────────────────────────────── */
 function App() {
   return (
     <Routes>
-      <Route path="/auth" element={<Auth />} />
+      {/* Protects the /auth page so logged in users don't accidentally see it again */}
+      <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+      
+      {/* Protected Workspace Layouts */}
       <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/project_folder/:folderId" element={<ProtectedRoute><ProjectFolder /></ProtectedRoute>} />
       <Route path="/edit_profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+
+      {/* Fallback Catch-All Route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
-}
-
-function ProtectedRoute({ children }) {
-  const navigate = useNavigate();
-  useEffect(() => { if (!isLoggedIn()) navigate("/auth"); }, []);
-  return isLoggedIn() ? children : null;
 }
 
 /* ── Home ─────────────────────────────────────────────────────────────────── */
@@ -125,8 +136,7 @@ function Home() {
     <div className="app">
       {toastEl}
       <div className="nav">
-        <img src="/favicon.png" alt="logo" 
-        style={{ width: 50, height: 50 }}/>
+        <img src="/favicon.png" alt="logo" style={{ width: 50, height: 50 }}/>
         <h1 className="title">ResHub</h1>
         <span className="nav-username">👋 {getUsername()}</span>
         <Link to="/profile"><img src={p_logo} alt="Profile" className="profile_logo" /></Link>
@@ -235,7 +245,7 @@ function HomeChatbot({ folders, setFolders, showToast }) {
   const [pendingTask, setPendingTask] = useState(null);
 
   const chatEndRef  = useRef();
-  const textareaRef = useRef(null);   // ← for the Claude-style input
+  const textareaRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -260,7 +270,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
     const text = query.trim();
     if (!text || chatLoading) return;
 
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
@@ -271,7 +280,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
     setChatLoading(true);
 
     try {
-      // ── Task intent ──────────────────────────────────────────────────────
       const taskKw = ["add task", "create task", "new task", "add todo", "create todo", "add to-do", "add a task"];
       const msgLower = text.toLowerCase();
 
@@ -296,7 +304,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
 
       const res = await api.globalChat(text);
 
-      // ── Folder navigation ────────────────────────────────────────────────
       if (res.intent === "navigate_folder" && res.folder_id) {
         setMessages((p) => [...p, { role: "bot", text: res.answer }]);
         setTimeout(() => navigate(`/project_folder/${res.folder_id}`), 800);
@@ -304,7 +311,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
         return;
       }
 
-      // ── Document pending ─────────────────────────────────────────────────
       if (res.intent === "document_agent" && res.doc_pending) {
         const fmtMsg = {
           role: "bot",
@@ -344,22 +350,17 @@ function HomeChatbot({ folders, setFolders, showToast }) {
 
   return (
     <div className="chatbot-inner" style={{ position: "relative", display: "flex", flexDirection: "column", height: "100%" }}>
-
-      {/* Header */}
       <div className="chatbot-topbar">
         <div style={{ display: "flex", gap: 8 }}>
           <span style={{ fontWeight: 500, fontSize: 19 }}>ResHub Assistant</span>
         </div>
       </div>
-
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* Messages + Input */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <div className="chat-messages">
             {messages.map((m, i) => (
               <div key={i} className={`chat-bubble ${m.role}`}>
                 <div className="bubble-text">{m.text}</div>
-
                 {m.isConfirm && m.confirmOptions && (
                   <ConfirmBox
                     question="Select a folder:"
@@ -371,7 +372,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
                     }}
                   />
                 )}
-
                 {m.isDocConfirm && (
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                     <button className="confirm-option-btn" onClick={() => handleDocDownload(m.folderId, "pdf")}>📄 PDF</button>
@@ -389,8 +389,6 @@ function HomeChatbot({ folders, setFolders, showToast }) {
             )}
             <div ref={chatEndRef} />
           </div>
-
-          {/* ── Claude-style input ─────────────────────────────────────────── */}
           <div className="chat_input_wrapper">
             <textarea
               ref={textareaRef}
@@ -411,25 +409,17 @@ function HomeChatbot({ folders, setFolders, showToast }) {
               }}
             />
             <div className="chat_toolbar">
-              <div /> {/* empty left side — no upload needed here */}
-              <button
-                className="send_btnf"
-                onClick={sendMessage}
-                disabled={chatLoading || !query.trim()}
-              >
+              <div />
+              <button className="send_btnf" onClick={sendMessage} disabled={chatLoading || !query.trim()}>
                 {chatLoading ? "..." : ""}
                 {!chatLoading && (
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2.5"
-                    strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="19" x2="12" y2="5" />
-                    <polyline points="5 12 12 5 19 12" />
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" />
                   </svg>
                 )}
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>

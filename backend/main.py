@@ -13,7 +13,7 @@ app.add_middleware(
         "http://localhost:3000",      # React default
         "http://localhost:5174",      # Vite default
         "http://localhost:4173",      # Vite preview
-        "https://your-frontend.onrender.com",  # your Render frontend URL
+        "https://reshub.vercel.app"  # your Render frontend URL
     ],
     allow_credentials=True,
     allow_methods=["*"],

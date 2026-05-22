@@ -20,3 +20,4 @@ redis>=5.0.0
 duckduckgo-search>=6.0.0
 typing-extensions>=4.9.0
 cachetools>=5.0.0
+echo "python-magic==0.4.27" >> backend/requirements.txt

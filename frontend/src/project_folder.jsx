@@ -432,6 +432,8 @@ function ProjectFolder() {
 
       {/* ── NAV ─────────────────────────────────────────────────────────── */}
       <div className="nav">
+        <img src="/favicon.png" alt="ResHub logo" 
+        style={{height: "50px", width: "50px"}}/>
         <Link to="/" className="link"><h1 className="title">ResHub</h1></Link>
         {folder && <span className="folder-breadcrumb">/ {folder.name}</span>}
         <Link to="/profile" style={{ marginLeft: "auto" }}>

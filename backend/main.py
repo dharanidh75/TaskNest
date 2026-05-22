@@ -10,11 +10,11 @@ app = FastAPI(title="ResHub API", version="3.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
         "https://reshub-git-main-code-x3.vercel.app",
         "https://reshub-6gif1888r-code-x3.vercel.app",
         "https://reshub-seven.vercel.app",  # keep old one too just in case
+        "http://localhost:5173",
+        "http://localhost:5174",
     ],
     allow_credentials=True,
     allow_methods=["*"],

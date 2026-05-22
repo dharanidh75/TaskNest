@@ -53,8 +53,8 @@ async def startup():
     print("✅ Embedding model ready")
 
     print("⏳ Connecting ChromaDB...")
-    from rag.chroma_store import _client
-    _client.heartbeat()
+    from rag.chroma_store import _get_client
+    _get_client.heartbeat()
     print("✅ ChromaDB ready")
 
     print("⏳ Compiling agent graph...")

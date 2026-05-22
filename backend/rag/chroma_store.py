@@ -15,19 +15,34 @@ _CHROMA_TENANT   = os.getenv("CHROMA_TENANT")
 _CHROMA_DATABASE = os.getenv("CHROMA_DATABASE")
 
 if _CHROMA_API_KEY:
-    _client = chromadb.HttpClient(
-        ssl=True,
-        host="api.trychroma.com",
-        tenant=_CHROMA_TENANT,
-        database=_CHROMA_DATABASE,
-        headers={"x-chroma-token": _CHROMA_API_KEY},
-    )
-    print("[ChromaDB] Using Chroma Cloud")
-else:
-    _DEFAULT_CHROMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "chroma_data")
-    CHROMA_PATH = os.path.abspath(os.getenv("CHROMA_PATH", _DEFAULT_CHROMA))
-    _client = chromadb.PersistentClient(path=CHROMA_PATH)
-    print(f"[ChromaDB] Using local persistent store at {CHROMA_PATH}")
+   _get_client() = None
+
+def _get_client():
+    global _get_client
+    if _get_client is not None:
+        return _get_client()
+
+    _CHROMA_API_KEY  = os.getenv("CHROMA_API_KEY")
+    _CHROMA_TENANT   = os.getenv("CHROMA_TENANT")
+    _CHROMA_DATABASE = os.getenv("CHROMA_DATABASE")
+
+    if _CHROMA_API_KEY:
+        _get_client() = chromadb.HttpClient(
+            ssl=True,
+            host="api.trychroma.com",
+            tenant=_CHROMA_TENANT,
+            database=_CHROMA_DATABASE,
+            headers={"x-chroma-token": _CHROMA_API_KEY},
+        )
+        print("[ChromaDB] Using Chroma Cloud")
+    else:
+        _DEFAULT_CHROMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "chroma_data")
+        CHROMA_PATH = os.path.abspath(os.getenv("CHROMA_PATH", _DEFAULT_CHROMA))
+        _get_client() = chromadb.PersistentClient(path=CHROMA_PATH)
+        print(f"[ChromaDB] Using local store at {CHROMA_PATH}")
+
+    return _get_client()
+
 
 
 def _collection_name(folder_id: int) -> str:
@@ -42,19 +57,19 @@ def get_collection(folder_id: int):
     """
     name = _collection_name(folder_id)
     try:
-        return _client.get_or_create_collection(
+        return _get_client().get_or_create_collection(
             name=name,
             embedding_function=_embedding_fn,
         )
     except Exception as e:
         print(f"[ChromaDB] get_or_create with embedding_fn failed ({e}), retrying without it")
-        return _client.get_or_create_collection(name=name)
+        return _get_client().get_or_create_collection(name=name)
 
 
 def delete_collection(folder_id: int):
     """Delete the ChromaDB collection for a folder (called on folder delete)."""
     try:
-        _client.delete_collection(name=_collection_name(folder_id))
+        _get_client().delete_collection(name=_collection_name(folder_id))
     except Exception:
         pass
 

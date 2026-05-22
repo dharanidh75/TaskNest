@@ -11,8 +11,8 @@ COPY requirements.txt .
 
 # Install CPU-only torch FIRST — pins it before sentence-transformers pulls in the 2.5GB CUDA build
 RUN pip install --no-cache-dir \
-    "torch==2.1.2+cpu" \
-    "torchvision==0.16.2+cpu" \
+    "torch==2.2.0+cpu" \
+"torchvision==0.17.0+cpu" \
     --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Install everything else — torch already satisfied (CPU), won't be upgraded

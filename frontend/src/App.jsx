@@ -125,7 +125,7 @@ function Home() {
     <div className="app">
       {toastEl}
       <div className="nav">
-        <img src="public/favicon.png" alt="logo" 
+        <img src="/favicon.png" alt="logo" 
         style={{ width: 50, height: 50 }}/>
         <h1 className="title">ResHub</h1>
         <span className="nav-username">👋 {getUsername()}</span>

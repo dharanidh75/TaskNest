@@ -9,7 +9,7 @@ import magic, hashlib
 
 router = APIRouter(prefix="/folders/{folder_id}/resources", tags=["resources"])
 
-UPLOAD_DIR        = "./uploads"
+UPLOAD_DIR = os.getenv("UPLOADS_DIR", "./uploads")
 MAX_FILE_SIZE     = 10 * 1024 * 1024
 MAX_FILENAME_LEN  = 255
 ALLOWED_EXT       = {".pdf", ".txt", ".docx", ".md", ".csv"}

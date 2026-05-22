@@ -8,9 +8,7 @@ RUN npm ci --prefer-offline
 
 COPY . .
 
-# VITE_API_URL is injected at build time by Railway
-# Set it in Railway's frontend service env vars:
-#   VITE_API_URL=https://reshub-backend-production.up.railway.app
+# VITE_API_URL injected at build time by Railway
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 

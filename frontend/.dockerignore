@@ -1,7 +1,7 @@
 node_modules/
 dist/
 .env
-.git
-.gitignore
-README.md
+.env.*
 *.log
+.vscode/
+.idea/

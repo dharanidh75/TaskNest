@@ -9,7 +9,7 @@
  *   - All other code is unchanged
  */
 
-const BASE = "http://localhost:8000";
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const PUBLIC_PATHS = ["/auth/register", "/auth/login"];
 

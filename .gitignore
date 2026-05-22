@@ -1,6 +1,35 @@
-\echo "backend/chroma_data/
+# ── Python ────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+dist/
+build/
+
+# ── Data (lives on Railway volume, NOT in git) ─
+backend/chroma_data/
 backend/uploads/
-**/.env
-**/node_modules/
-**/__pycache__/
-**/dist/" >> .gitignore
+backend/models/
+
+# ── Env ───────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Frontend ──────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+
+# ── Editor ────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Misc ──────────────────────────────────────
+*.log
+newrelic.ini
+railway-deploy-patch.tar.gz

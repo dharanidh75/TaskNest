@@ -9,7 +9,12 @@ app = FastAPI(title="ResHub API", version="3.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",") if o.strip()],
+     allow_origins=[
+        "http://localhost:3000",      # React default
+        "http://localhost:5174",      # Vite default
+        "http://localhost:4173",      # Vite preview
+        "https://your-frontend.onrender.com",  # your Render frontend URL
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,17 +26,35 @@ async def startup():
     create_tables()
     print("✅ DB tables ready")
 
-    # Safe migration: add bio column if missing
+    # Safe migrations
     try:
         from database import engine
         with engine.connect() as conn:
-            conn.execute(
-                __import__("sqlalchemy").text("ALTER TABLE users ADD COLUMN bio TEXT")
-            )
-            conn.commit()
-        print("✅ Migrated: users.bio column added")
-    except Exception:
-        pass
+            # Existing bio migration
+            try:
+                conn.execute(__import__("sqlalchemy").text("ALTER TABLE users ADD COLUMN bio TEXT"))
+                conn.commit()
+                print("✅ Migrated: users.bio column added")
+            except Exception:
+                pass
+
+            # 🚀 NEW: Add session_id to chat_history
+            try:
+                conn.execute(__import__("sqlalchemy").text("ALTER TABLE chat_history ADD COLUMN session_id VARCHAR(255)"))
+                conn.commit()
+                print("✅ Migrated: chat_history.session_id added")
+            except Exception:
+                pass
+
+            # 🚀 NEW: Add session_title to chat_history
+            try:
+                conn.execute(__import__("sqlalchemy").text("ALTER TABLE chat_history ADD COLUMN session_title VARCHAR(255)"))
+                conn.commit()
+                print("✅ Migrated: chat_history.session_title added")
+            except Exception:
+                pass
+    except Exception as e:
+        print(f"Migration runner encountered an error: {e}")
 
     # Verify Redis connection
     try:
@@ -54,7 +77,7 @@ async def startup():
 
     print("⏳ Connecting ChromaDB...")
     from rag.chroma_store import _get_client
-    _get_client.heartbeat()
+    _get_client().heartbeat()
     print("✅ ChromaDB ready")
 
     print("⏳ Compiling agent graph...")

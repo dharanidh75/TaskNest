@@ -95,7 +95,7 @@ It is not a generic chatbot. Every folder has its own isolated knowledge base. A
 | Vector Store | ChromaDB |
 | Embeddings | `all-MiniLM-L6-v2` (Sentence Transformers) |
 | LLM | Groq API — `llama-3.1-8b-instant` |
-| Agent Framework | LangGraph |
+| Agent Framework | LangGraph |    
 | Auth | JWT (python-jose), bcrypt |
 | File Parsing | PyMuPDF, python-docx, chardet |
 
@@ -172,7 +172,7 @@ source venv/bin/activate
 venv\Scripts\activate
 ```
 
-**3. Install dependencies**
+**3. Install dependencie's**
 
 ```bash
 pip install -r requirements.txt

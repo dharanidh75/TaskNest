@@ -13,11 +13,14 @@ engine = create_engine(
     DATABASE_URL,
     pool_size=10,
     max_overflow=20,
-    pool_pre_ping=True,       # test connection before use — kills stale ones silently
-    pool_recycle=280,         # recycle before MySQL's default wait_timeout (300s)
-    pool_timeout=30,          # don't hang forever waiting for a connection
+    pool_pre_ping=True,
+    pool_recycle=280,
+    pool_timeout=30,
     connect_args={
         "connect_timeout": 10,
+        "ssl": {
+            "verify_cert": False   # ← handles SSL without needing ca.pem
+        }
     },
 )
 
